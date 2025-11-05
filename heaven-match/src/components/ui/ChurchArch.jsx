@@ -1,11 +1,21 @@
-//Reusable model for ChurchArch design
+// Reusable module containing various SVG arch designs for UI decoration.
 import React from 'react';
+
+/**
+ * Renders a stylized Church Arch SVG graphic.
+ * Supports 'default' (pink/light-pink) and 'inverse' (white) color variants.
+ * @param {Object} props - Component props.
+ * @param {string} [props.className=''] - Additional CSS classes for styling.
+ * @param {'default'|'inverse'} [props.variant='default'] - Color scheme variant.
+ */
 export const ChurchArch = ({ className = '', variant = 'default' }) => {
+  // Determine colors based on the selected variant.
   const fillColor = variant === 'inverse' ? '#ffffff' : '#fce7f3';
   const strokeColor = variant === 'inverse' ? '#ffffff' : '#ec4899';
   
   return (
     <svg viewBox="0 0 200 200" fill="none" className={className}>
+      {/* Outer arch path using Quadratic Bezier curves (Q) */}
       <path 
         d="M 20 180 Q 20 80, 100 20 Q 180 80, 180 180 Z" 
         fill={fillColor} 
@@ -13,6 +23,7 @@ export const ChurchArch = ({ className = '', variant = 'default' }) => {
         strokeWidth="2" 
         opacity="0.3" 
       />
+      {/* Inner arch path for definition */}
       <path 
         d="M 30 180 Q 30 90, 100 35 Q 170 90, 170 180" 
         fill="none" 
@@ -24,15 +35,24 @@ export const ChurchArch = ({ className = '', variant = 'default' }) => {
   );
 };
 
+// ---
+
+/**
+ * Renders an elaborate Arch Decoration SVG featuring multiple paths and circle accents.
+ * @param {Object} props - Component props.
+ * @param {string} [props.className=''] - Additional CSS classes.
+ */
 export const ArchDecoration = ({ className = '' }) => {
   return (
     <svg viewBox="0 0 400 300" fill="none" className={className}>
+      {/* Outer path for the main arch structure */}
       <path 
         d="M 50 280 L 50 150 Q 50 50, 200 20 Q 350 50, 350 150 L 350 280" 
         stroke="#fbcfe8" 
         strokeWidth="4" 
         fill="none" 
       />
+      {/* Inner path for a layered effect */}
       <path 
         d="M 60 280 L 60 155 Q 60 60, 200 32 Q 340 60, 340 155 L 340 280" 
         stroke="#ec4899" 
@@ -40,6 +60,7 @@ export const ArchDecoration = ({ className = '' }) => {
         fill="none" 
         opacity="0.5" 
       />
+      {/* Decorative circle elements */}
       <circle cx="200" cy="35" r="8" fill="#ec4899" opacity="0.6" />
       <circle cx="120" cy="80" r="5" fill="#fbcfe8" />
       <circle cx="280" cy="80" r="5" fill="#fbcfe8" />
@@ -49,6 +70,13 @@ export const ArchDecoration = ({ className = '' }) => {
   );
 };
 
+// ---
+
+/**
+ * Renders a simple, two-line arch SVG suitable for minimal designs.
+ * @param {Object} props - Component props.
+ * @param {string} [props.className=''] - Additional CSS classes.
+ */
 export const SimpleArch = ({ className = '' }) => {
   return (
     <svg viewBox="0 0 300 200" fill="none" className={className}>

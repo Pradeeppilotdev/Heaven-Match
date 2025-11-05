@@ -1,7 +1,14 @@
 import React from 'react';
+// Import icons representing the steps of the matchmaking process.
 import { UserPlus, Brain, Sparkles, HeartHandshake, MessageSquare } from 'lucide-react'; 
 
+/**
+ * Renders the "How It Works" feature section.
+ * It uses a sequential four-step grid layout to explain the AI-powered process.
+ * @returns {JSX.Element} The How It Works section component.
+ */
 const HowItWorks = () => {
+  // Configuration array defining the title, icon, and description for each step.
   const steps = [
     { 
       icon: UserPlus, 
@@ -26,8 +33,11 @@ const HowItWorks = () => {
   ];
 
   return (
+    // Section uses a subtle pink gradient background.
     <section className="py-20 bg-gradient-to-br from-pink-50 to-white relative overflow-hidden font-sans">
       <div className="container mx-auto px-4 relative z-10">
+        
+        {/* Section Header */}
         <div className="text-center mb-16 space-y-4">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900">How Our AI Finds Your Match</h2>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
@@ -35,19 +45,24 @@ const HowItWorks = () => {
           </p>
         </div>
         
+        {/* Process Steps Grid */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <div key={index} className="relative">
              
+              {/* Connector line for large screens (Lg) to visually link the steps */}
               {index < steps.length - 1 && (
+                // Positioned absolutely to span the gap to the next step's column.
                 <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-pink-300 to-transparent -z-10"></div>
               )}
               
               <div className="text-center space-y-4">
                 <div className="relative inline-block">
+                  {/* Step Icon Container */}
                   <div className="p-6 bg-white rounded-full shadow-lg border-4 border-pink-200 relative z-10 group hover:border-pink-400 transition-colors">
                     <step.icon className="w-10 h-10 text-pink-600" />
                   </div>
+                  {/* Absolute positioned step number badge */}
                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-pink-500 text-white rounded-full flex items-center justify-center z-20 font-bold border-2 border-white">
                     {index + 1}
                   </div>
