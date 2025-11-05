@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Home, Feather } from 'lucide-react'; 
+import { Heart } from 'lucide-react'; 
 
 const MandapSection = () => {
   const features = [
