@@ -1,3 +1,4 @@
+//AI Icebreaker demo module for feature page
 import React, { useState } from 'react';
 import { Wand2, Sparkles, Loader2 } from 'lucide-react';
 import Card from './Card'; 

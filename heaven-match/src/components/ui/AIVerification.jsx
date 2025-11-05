@@ -1,5 +1,6 @@
+//AI Verification demo module for feature page
 import React, { useState } from 'react';
-import { Shield, Loader2, Sparkles, CheckCircle, AlertTriangle, User, Camera, FileText } from 'lucide-react';
+import { Shield, Loader2, Sparkles, CheckCircle, User, Camera, FileText } from 'lucide-react';
 import Card from './Card'; 
 import Button from './Button';
 

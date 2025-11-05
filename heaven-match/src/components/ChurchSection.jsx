@@ -13,13 +13,10 @@ const MandapSection = () => {
     <section className="py-20 bg-gradient-to-br from-white via-orange-50 to-white relative overflow-hidden font-sans">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
-          
           <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-amber-200">
             <div className="grid md:grid-cols-2 gap-0">
-              
               <div className="relative h-64 md:h-auto">
                 <img
-                  
                   src="https://www.mconventions.com/wp-content/uploads/2023/03/Excellent-Mandap-Decor-by-Sumyog-Wedding-Chennai-weddingnet-wedding-india-indian-indian%E2%80%A6-_-Traditional-wedding-decor-Used-wedding-decor-Wedding-decor-photos.jpg"
                   alt="Traditional Indian wedding Mandap"
                   className="w-full h-full object-cover"

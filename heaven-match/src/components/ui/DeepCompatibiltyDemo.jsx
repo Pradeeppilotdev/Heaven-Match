@@ -1,3 +1,4 @@
+//DeepCompatibilty demo module for features
 import React, { useState } from 'react';
 import { Brain, Loader2, Sparkles, Heart, BookOpen, Mountain, Coffee } from 'lucide-react';
 import Card from './Card'; 

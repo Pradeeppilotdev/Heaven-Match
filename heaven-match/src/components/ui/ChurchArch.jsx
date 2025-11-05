@@ -1,5 +1,5 @@
+//Reusable model for ChurchArch design
 import React from 'react';
-
 export const ChurchArch = ({ className = '', variant = 'default' }) => {
   const fillColor = variant === 'inverse' ? '#ffffff' : '#fce7f3';
   const strokeColor = variant === 'inverse' ? '#ffffff' : '#ec4899';

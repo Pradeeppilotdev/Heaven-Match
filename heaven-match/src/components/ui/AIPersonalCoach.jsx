@@ -1,3 +1,4 @@
+//AI personal coach demo module for features page
 import React, { useState } from 'react';
 import { MessageCircle, Sparkles, Loader2, Heart, Users, Calendar, TrendingUp } from 'lucide-react';
 import Card from './Card'; 
@@ -37,7 +38,7 @@ User's question: "${selectedQuestion}"
 
 Provide warm, empathetic advice in exactly 3 short, actionable tips (each tip should be 1 sentence, max 20 words).
 Format as a JSON array of 3 strings. Be encouraging, positive, and specific.
-Make it conversational and friendly, like advice from a wise friend.`;
+Make it conversational and friendly, like advice from a wise friend.`; // prompt to be given as payload can be modified
 
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
