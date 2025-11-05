@@ -1,0 +1,510 @@
+[
+  {
+    "id": "TC001",
+    "title": "AI Chat Widget - Basic Conversation Flow",
+    "description": "Verify that the AI chat widget initializes properly, sends and receives messages with typing indicators and maintains message history.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the Contact Page with Live Chat widget"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that AI chat widget loads and displays greeting message automatically"
+      },
+      {
+        "type": "action",
+        "description": "Send a simple message from user input"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify typing indicator shows during AI response preparation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI response is received within 3 seconds and shown in chat history"
+      },
+      {
+        "type": "action",
+        "description": "Send multiple sequential messages"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify full conversation history is correctly maintained and displayed without repetition in AI responses"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Intent Detection Accuracy and Category Mapping",
+    "description": "Verify intent detection classifies user queries into billing, technical, safety, account, profile_match, and general categories with over 95% accuracy.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send sample messages covering all six intent categories"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify server /api/detect-intent classifies messages into correct categories"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate classification accuracy by comparing with expected intents for each sample message"
+      },
+      {
+        "type": "action",
+        "description": "Send ambiguous or mixed intent messages"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify intent detection selects the most relevant intent category appropriately"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Information Extraction Auto-fill Functionality",
+    "description": "Validate that user details like name, email, phone, and subject are correctly extracted from conversation and auto-filled in the contact form with at least 98% accuracy.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Engage in chat conversation providing user details naturally"
+      },
+      {
+        "type": "action",
+        "description": "Trigger information extraction API or wait for auto-fill event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify contact form fields are populated with correct extracted information"
+      },
+      {
+        "type": "action",
+        "description": "Provide partial or incorrect info in chat to test extraction robustness"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that extraction does not inaccurately populate fields if information is ambiguous or missing"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "FAQ Search Functionality with AI Enhancement",
+    "description": "Ensure FAQ search returns relevant answers for 8 predefined commonly asked questions with AI enhancements.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Input queries related to the 8 predefined FAQ topics in the chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify FAQ search API returns accurate and contextually relevant answers"
+      },
+      {
+        "type": "action",
+        "description": "Input ambiguous or slightly off-topic questions"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm AI enhancement refines the search to provide the closest possible FAQ responses"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Smart Routing Suggestion Accuracy",
+    "description": "Test that the smart routing API correctly recommends best support channel (email, phone, ticket, chat) based on intent and priority.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate user queries belonging to different intents and priority levels"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify /api/smart-route suggests appropriate routing channel consistent with query context"
+      },
+      {
+        "type": "action",
+        "description": "Provide edge cases such as urgent safety issues or complex billing questions"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate routing prioritizes urgent and complex issues towards real-time channels or ticket creation"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Automated Ticket Creation and Metadata Verification",
+    "description": "Verify tickets are created with unique IDs (HM-XXXXXXXX), proper priority levels, sentiment data, conversation summaries, and user information included.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger creation of a support ticket after a chat session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ticket ID format matches HM-XXXXXXXX pattern"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate ticket contains correct priority category aligned with detected urgency"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that sentiment and conversation summary fields accurately represent chat content"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure user details are correctly attached to the ticket"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Sentiment Analysis Accuracy and UI Indication",
+    "description": "Test sentiment analysis detects each of the 18 possible emotions correctly and updates the UI visual indicators accordingly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send chat messages crafted to represent the 18 distinct emotions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sentiment API detects the correct emotion for each message"
+      },
+      {
+        "type": "assertion",
+        "description": "Check UI sentiment indicators update correctly to represent detected emotions"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Automatic Language Detection and Localization",
+    "description": "Confirm language detection accurately identifies user message language, adjusts UI language, and AI responses localize properly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send messages in supported multiple languages"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify language detection API returns correct language code"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm UI elements adapt language accordingly"
+      },
+      {
+        "type": "assertion",
+        "description": "Check AI responses are localized to detected language"
+      },
+      {
+        "type": "action",
+        "description": "Send mixed language inputs"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate language detection handles or defaults correctly without breaking UI or logic"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Smart Quick Replies Dynamic Suggestion Validation",
+    "description": "Validate the presence of three AI-generated quick reply options that refresh dynamically based on conversation context.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Engage in chat and progress conversation through several turns"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify three quick reply suggestions appear after each user message"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that quick replies are contextually relevant to the current discussion"
+      },
+      {
+        "type": "action",
+        "description": "Select a quick reply to send"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify chat advances appropriately and quick reply options update accordingly"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Conversation Summary Generation Quality",
+    "description": "Test auto-generation of conversation summaries that capture main issues, user concerns, and suggested solutions in clear 2-3 sentences.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete a diverse chat session covering multiple topics"
+      },
+      {
+        "type": "action",
+        "description": "Trigger /api/summarize-conversation endpoint"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify summary contains key user issues and solutions clearly and concisely"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm summary length and readability meet criteria"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Smart Escalation Triggering",
+    "description": "Ensure automatic escalation of complex, urgent, or sensitive issues routes chat to human agents without false positives.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send messages simulating high urgency or sensitive issues"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify /api/should-escalate triggers human agent escalation"
+      },
+      {
+        "type": "action",
+        "description": "Send messages for simple or low priority issues"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm no false escalation occurs for low priority cases"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Priority Detection Consistency",
+    "description": "Verify priority detection accurately categorizes issues as low, medium, or high urgency aligned with user sentiment and issue seriousness.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send chat messages with varying urgency levels indicated by wording and sentiment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system detects and assigns corresponding priority levels correctly"
+      },
+      {
+        "type": "action",
+        "description": "Cross-validate priority with sentiment analysis results for consistency"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Context Memory and Non-Repetitive AI Responses",
+    "description": "Test that the context memory maintains full conversation history in AI processing and prevents repetitive or irrelevant responses.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Carry out a long multi-turn conversation with references to earlier topics"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI responses correctly incorporate prior context without repetition"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm no loss of context over time or after topic switches"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Proactive Assistance Identification and Guidance",
+    "description": "Validate that the system identifies when a user needs assistance proactively and offers relevant help without disrupting user experience.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate user confusion or inactivity that should trigger proactive assistance"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify proactive assistance prompt appears timely and is context appropriate"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure proactive help can be easily accepted or dismissed by user"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Error Handling: Network Failure and API Downtime",
+    "description": "Verify system behavior when backend AI or APIs fail or timeout, ensuring graceful degradation and user notification.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate network failure or backend API downtime during chat interaction"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user receives clear error messages or fallback UI without freezing"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm chat UI recovers gracefully when services are restored"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Security: Injection and Data Validation in Input Fields",
+    "description": "Test input sanitization for chat messages, contact form fields and verify resistance to common injection attacks.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to submit SQL injection, script tags, or malformed data via chat and contact form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify inputs are sanitized and no harmful code is executed or stored"
+      },
+      {
+        "type": "assertion",
+        "description": "Check system does not expose sensitive data or crash"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Performance: AI Chat Response Time Under Load",
+    "description": "Ensure AI chat responses are delivered within 3 seconds under normal and moderate load conditions.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate multiple concurrent chat sessions"
+      },
+      {
+        "type": "assertion",
+        "description": "Measure response time for each AI reply, ensuring 95% are under 3 seconds"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "UI: Contact Form Auto-Fill Verification",
+    "description": "Ensure that the contact form fields are auto-filled from chat correctly and user can manually override values.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter user details in chat to trigger auto-fill"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that contact form fields get populated automatically"
+      },
+      {
+        "type": "action",
+        "description": "Manually edit auto-filled fields in the contact form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the manual changes persist and form validation works correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Integration: Human Agent Escalation Workflow",
+    "description": "Validate end-to-end workflow for smart escalation from AI chat to human agent including notification and handoff summary.",
+    "category": "integration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger issue requiring escalation in chat"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI flags issue for escalation and chat is routed to human agent"
+      },
+      {
+        "type": "assertion",
+        "description": "Check human agent receives conversation summary and user context"
+      },
+      {
+        "type": "action",
+        "description": "Agent responds and chat continues smoothly after escalation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify conversation history and metadata remain intact"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Navigation and Routing Verification",
+    "description": "Ensure main navigation routes correctly to Contact, Support, Locations, and Help pages.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Click navigation links for Contact, Support, Locations, Help"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm page route updates and correct page content is displayed"
+      },
+      {
+        "type": "action",
+        "description": "Test browser back and forward buttons"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify routing behaves correctly and state is preserved"
+      }
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+═══════════════════════════════════════════════════════════════
+   QUICK FIX - Run these commands in PowerShell AS ADMINISTRATOR
+═══════════════════════════════════════════════════════════════
+
+IMPORTANT: You MUST run PowerShell as Administrator first!
+
+1. Right-click PowerShell → "Run as Administrator"
+2. Then run these commands:
+
+───────────────────────────────────────────────────────────────
+cd C:\Users\System6\Desktop\contact
+
+Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+
+npm.cmd cache clean --force
+
+npm.cmd install
+
+npm.cmd start
+───────────────────────────────────────────────────────────────
+
+OR use the script:
+Right-click FIX_AND_START.ps1 → "Run with PowerShell" (as Admin)
+
+═══════════════════════════════════════════════════════════════
+

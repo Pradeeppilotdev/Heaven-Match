@@ -1,0 +1,21 @@
+⚠️ IMPORTANT: RESTART SERVER REQUIRED ⚠️
+
+The chatbot now uses ONLY the API key from .env.local file.
+
+To make it work:
+
+1. Stop the current server:
+   - Press Ctrl+C in the terminal where npm start is running
+
+2. Start the server again:
+   npm.cmd start
+
+3. Wait for "Compiled successfully!" message
+
+4. Refresh your browser (F5)
+
+5. Check the browser console - you should see:
+   ✅ API Key loaded successfully from .env.local
+
+The chatbot will now work with your Gemini API key!
+

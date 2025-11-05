@@ -1,0 +1,32 @@
+⚠️ IMPORTANT: API KEY NOT LOADED ⚠️
+
+The .env.local file exists but React needs the server to be RESTARTED to load it.
+
+FOLLOW THESE STEPS:
+
+1. In your terminal where npm start is running, press:
+   Ctrl + C
+
+2. Wait for the server to stop completely
+
+3. Then start it again:
+   npm.cmd start
+
+4. Wait for the server to fully start (you'll see "Compiled successfully!")
+
+5. Refresh your browser page
+
+6. The API key should now be loaded and the chatbot will work!
+
+The .env.local file is at:
+C:\Users\System6\Desktop\contact\.env.local
+
+And contains:
+REACT_APP_GOOGLE_AI_API_KEY=AIzaSyBKFwvrVC83n341aHTYSidf227zjl_9oBo
+
+After restarting, you should see in the console:
+✅ API Key loaded successfully
+
+Instead of:
+⚠️ API Key not found!
+
