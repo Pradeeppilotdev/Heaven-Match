@@ -89,7 +89,7 @@ Make it conversational and friendly, like advice from a wise friend.`;
         </div>
         <h3 className="text-xl font-bold text-gray-900">AI Relationship Coach</h3>
         <p className="text-gray-600">
-          Get expert AI-powered relationship advice instantly!
+          Get expert AI-powered relationship advice instantly to strengthen your bond!
         </p>
         
         {/* The Interactive Part */}

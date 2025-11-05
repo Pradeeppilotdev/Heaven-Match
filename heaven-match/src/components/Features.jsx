@@ -2,14 +2,16 @@ import React from 'react';
 import { Brain, Shield, Lock, Users, MessageCircle } from 'lucide-react'; 
 import Card from './ui/Card';
 import { AIIcebreakerDemo } from './ui/AIIceBreakerDemo';
-import { AICoachDemo } from './ui/AIPersonalCoach'; 
+import { AICoachDemo } from './ui/AIPersonalCoach';
+import { DeepCompatibilityDemo } from './ui/DeepCompatibiltyDemo';
+import { AIVerificationDemo } from './ui/AIVerification';
 
 export const Features = () => {
   const features = [
     { 
-      icon: Brain, 
-      title: "Deep Compatibility AI", 
-      description: "Our AI algorithm analyzes personality, values, and life goals to find matches with true, deep-rooted compatibility." 
+      title: "Deep Compatibility AI",
+      isDemo: true,
+      demoType: "compatibility" 
     },
     { 
       icon: Users, 
@@ -17,11 +19,10 @@ export const Features = () => {
       description: "The system learns from your interactions, refining your potential matches based on who you show interest in." 
     },
     { 
-      icon: Shield, 
-      title: "AI-Assisted Verification", 
-      description: "We use advanced AI to verify profiles, ensuring a safe and authentic community free from fakes and scammers." 
+      title: "AI-Assisted Verification",
+      isDemo: true,
+      demoType: "verification"
     },
-    
     { 
       title: "Smart Icebreakers",
       isDemo: true,
@@ -54,7 +55,11 @@ export const Features = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             feature.isDemo ? (
-              feature.demoType === "icebreaker" ? (
+              feature.demoType === "compatibility" ? (
+                <DeepCompatibilityDemo key={feature.title} />
+              ) : feature.demoType === "verification" ? (
+                <AIVerificationDemo key={feature.title} />
+              ) : feature.demoType === "icebreaker" ? (
                 <AIIcebreakerDemo key={feature.title} />
               ) : (
                 <AICoachDemo key={feature.title} />
