@@ -1,9 +1,16 @@
+/**
+ * HelpPage Component
+ * Purpose: Provides help center with searchable FAQs, categorized by topic (Account, Profile, Payment, Technical, Safety)
+ * Allows users to search for answers and browse help resources
+ */
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './HelpPage.css';
 
 const HelpPage = () => {
+  // State for search query input
   const [searchQuery, setSearchQuery] = useState('');
+  // State for selected FAQ category filter
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
@@ -85,8 +92,14 @@ const HelpPage = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // State to track which FAQ item is currently expanded
   const [openFAQ, setOpenFAQ] = useState(null);
 
+  /**
+   * toggleFAQ - Toggles FAQ item expand/collapse state
+   * Purpose: Opens or closes an FAQ item when clicked, closing others if needed
+   * @param {number} id - The ID of the FAQ item to toggle
+   */
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
   };

@@ -1,3 +1,8 @@
+/**
+ * Main App Component
+ * Purpose: Root component that sets up routing and application structure
+ * Manages global state for live chat widget visibility and renders all page routes
+ */
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
@@ -10,7 +15,13 @@ import LocationsPage from './pages/LocationsPage';
 import HelpPage from './pages/HelpPage';
 import './App.css';
 
+/**
+ * App Component
+ * Purpose: Main application component that provides routing and layout structure
+ * @returns {JSX.Element} The rendered application with navigation, routes, footer, and live chat
+ */
 function App() {
+  // State to control live chat widget visibility
   const [showLiveChat, setShowLiveChat] = useState(false);
 
   return (

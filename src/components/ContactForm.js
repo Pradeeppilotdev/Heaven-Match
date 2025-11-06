@@ -1,3 +1,9 @@
+/**
+ * ContactForm Component
+ * Purpose: Displays a contact form for users to submit inquiries with validation
+ * Pre-fills form fields from chat-extracted data if available
+ * @param {Object} initialData - Optional initial form data extracted from chat (name, email, phone, subject)
+ */
 import React, { useState } from 'react';
 import './ContactForm.css';
 
@@ -13,7 +19,10 @@ const ContactForm = ({ initialData }) => {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Update form when initialData changes (from chat)
+  /**
+   * Effect: Update form fields when initialData changes (from chat widget)
+   * Purpose: Automatically fills form fields when user info is extracted from chat conversation
+   */
   React.useEffect(() => {
     if (initialData) {
       setFormData(prev => ({
@@ -26,6 +35,11 @@ const ContactForm = ({ initialData }) => {
     }
   }, [initialData]);
 
+  /**
+   * handleChange - Handles input field changes
+   * Purpose: Updates form state when user types in any input field and clears validation errors
+   * @param {Event} e - The change event from the input element
+   */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'file') {
@@ -39,6 +53,13 @@ const ContactForm = ({ initialData }) => {
     }
   };
 
+  /**
+   * validateForm - Validates all form fields before submission
+   * Purpose: Checks that all required fields are filled and formatted correctly
+   * Validates: name (required), email (required, valid format), phone (required, 10 digits), 
+   * subject (required), message (required)
+   * @returns {boolean} True if all validations pass, false otherwise
+   */
   const validateForm = () => {
     const newErrors = {};
     
@@ -70,6 +91,12 @@ const ContactForm = ({ initialData }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * handleSubmit - Handles form submission
+   * Purpose: Validates form, simulates submission, shows success message, and resets form
+   * Generates a ticket reference number for the user
+   * @param {Event} e - The form submit event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     

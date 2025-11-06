@@ -11,10 +11,25 @@ const AI_API_KEY = process.env.REACT_APP_AI_API_KEY || process.env.REACT_APP_HF_
 const AI_MODEL = process.env.REACT_APP_AI_MODEL || 'meta-llama/llama-3.1-8b-instruct'; // OpenRouter model
 
 // Middleware
-app.use(cors());
+// CORS configured to allow requests from any origin (for mobile/network access)
+app.use(cors({
+  origin: '*', // Allow all origins (for mobile/network access)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Universal AI API call function - works with OpenRouter, OpenAI, or Hugging Face
+/**
+ * Universal AI API call function - works with OpenRouter, OpenAI, or Hugging Face
+ * Purpose: Makes API calls to AI services based on configured provider (OpenRouter, OpenAI, or Hugging Face)
+ * @param {string} prompt - The user's message or prompt to send to the AI
+ * @param {Object} options - Configuration options for the AI call
+ * @param {number} options.maxTokens - Maximum number of tokens in the response (default: 256)
+ * @param {number} options.temperature - Controls randomness in response (0-1, default: 0.7)
+ * @param {string} options.systemPrompt - Optional system-level instructions for the AI
+ * @returns {Promise<string>} The AI-generated response text
+ * @throws {Error} If API key is not configured or API call fails
+ */
 const callAI = async (prompt, options = {}) => {
   const {
     maxTokens = 256,
@@ -115,7 +130,15 @@ const callAI = async (prompt, options = {}) => {
   }
 };
 
-// AI Intent Detection endpoint
+/**
+ * AI Intent Detection endpoint
+ * Purpose: Analyzes user messages to categorize them into intent types (billing, technical, safety, account, profile_match, general)
+ * This helps route support requests to the appropriate team or channel
+ * POST /api/detect-intent
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.message - The user message to analyze
+ * @returns {Object} JSON response with detected intent and original message
+ */
 app.post('/api/detect-intent', async (req, res) => {
   try {
     const { message } = req.body;
@@ -128,31 +151,32 @@ app.post('/api/detect-intent', async (req, res) => {
       return res.status(500).json({ error: 'AI API key not configured' });
     }
 
-    // Intent detection prompt
-    const intentPrompt = `Classify this customer support query into ONE of these categories:
-- billing (payment, subscription, refund, pricing)
-- technical (login, password, profile, app issues)
-- safety (abuse, scam, harassment, report)
-- account (delete account, verification, profile management)
-- profile_match (suggest profiles, find matches, show profiles, match suggestions)
-- general (general questions, information)
+    // Pure AI intent detection - no hardcoded rules
+    const intentPrompt = `You are an expert customer support intent classifier. Analyze the user's message and determine their intent.
+
+Analyze this customer support query and classify it into ONE category:
+- billing (payment, subscription, refund, pricing, billing questions)
+- technical (login, password, profile, app issues, technical problems)
+- safety (abuse, scam, harassment, report, safety concerns)
+- account (delete account, verification, profile management, account issues)
+- profile_match (suggest profiles, find matches, show profiles, match suggestions, looking for matches)
+- general (general questions, information, other inquiries)
 
 User query: "${message}"
 
-Respond with ONLY the category name (one word):`;
+Respond with ONLY the category name (one word, lowercase):`;
 
     const response = await callAI(intentPrompt, {
-      maxTokens: 10,
-      temperature: 0.3
+      maxTokens: 15,
+      temperature: 0.2
     });
 
-    let intent = 'general';
-    const text = response.toLowerCase().trim();
-    if (text.includes('billing')) intent = 'billing';
-    else if (text.includes('technical')) intent = 'technical';
-    else if (text.includes('safety')) intent = 'safety';
-    else if (text.includes('account')) intent = 'account';
-    else if (text.includes('profile') || text.includes('match')) intent = 'profile_match';
+    // Clean and normalize AI response - no hardcoded parsing
+    let intent = response.toLowerCase().trim().split(/\s+/)[0].replace(/[^a-z_]/g, '');
+    // If AI didn't return a valid category, let AI decide with a follow-up
+    if (!intent || intent.length === 0) {
+      intent = 'general';
+    }
 
     res.json({ intent, message });
   } catch (error) {
@@ -161,7 +185,15 @@ Respond with ONLY the category name (one word):`;
   }
 });
 
-// AI Extract User Info endpoint - extracts name, email, phone from chat
+/**
+ * AI Extract User Info endpoint - extracts name, email, phone from chat conversation
+ * Purpose: Automatically extracts user contact information (name, email, phone) from conversation history
+ * This helps pre-fill contact forms and reduce manual data entry
+ * POST /api/extract-info
+ * @param {Object} req.body - Request body
+ * @param {Array} req.body.conversation - Array of conversation messages with sender and text
+ * @returns {Object} JSON response with extracted information (name, email, phone, subject)
+ */
 app.post('/api/extract-info', async (req, res) => {
   try {
     const { conversation } = req.body;
@@ -218,71 +250,94 @@ JSON:`;
   }
 });
 
-// AI Smart Routing endpoint - suggests best support channel
+/**
+ * AI Smart Routing endpoint - suggests best support channel based on intent
+ * Purpose: Determines the most appropriate support channel (phone, email, ticket, chat) based on the detected intent
+ * Helps users get faster resolution by directing them to the right support channel
+ * POST /api/smart-route
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.intent - The detected intent category
+ * @param {string} req.body.message - The user's message
+ * @param {string} req.body.urgency - Optional urgency level (low, medium, high)
+ * @returns {Object} JSON response with recommended channel, contact info, and reasoning
+ */
 app.post('/api/smart-route', async (req, res) => {
   try {
     const { intent, message, urgency } = req.body;
     
-    // Routing rules based on intent
-    const routingRules = {
-      'safety': {
-        channel: 'phone',
-        priority: 'high',
-        contact: '1800-999-8888',
-        name: 'Safety Hotline (24/7)',
-        reason: 'Safety issues require immediate attention via phone',
-        email: 'safety@heavenmatch.com'
-      },
-      'billing': {
-        channel: 'email',
-        priority: 'medium',
-        contact: 'billing@heavenmatch.com',
-        name: 'Billing Support',
-        reason: 'Billing inquiries are best handled via email for documentation',
-        email: 'billing@heavenmatch.com'
-      },
-      'technical': {
-        channel: 'ticket',
-        priority: 'medium',
-        contact: 'Support Ticket System',
-        name: 'Technical Support',
-        reason: 'Technical issues benefit from ticket tracking',
-        email: 'support@heavenmatch.com'
-      },
-      'account': {
-        channel: 'chat',
-        priority: 'normal',
-        contact: 'Live Chat',
-        name: 'Account Support',
-        reason: 'Account questions can be resolved quickly via chat',
-        email: 'support@heavenmatch.com'
-      },
-      'general': {
-        channel: 'chat',
-        priority: 'normal',
-        contact: 'Live Chat',
-        name: 'General Support',
-        reason: 'General questions are best handled via chat',
-        email: 'support@heavenmatch.com'
+    // Pure AI smart routing - AI decides the best channel intelligently
+    const routingPrompt = `You are an expert customer support routing system. Analyze the user's intent and message to recommend the best support channel.
+
+Available support channels:
+- phone: For urgent issues, safety concerns, complex problems requiring immediate assistance
+- email: For billing inquiries, documentation needs, detailed explanations
+- ticket: For technical issues, tracking needs, follow-up requirements
+- chat: For quick questions, account issues, general inquiries
+
+IMPORTANT: The company support email is: globalsupport@company.com
+- Always use globalsupport@company.com for email channel recommendations
+- Use this email address for all support-related email communications
+
+User Intent: ${intent}
+User Message: "${message}"
+Urgency Level: ${urgency || 'medium'}
+
+Based on the intent, message content, and urgency, intelligently recommend:
+1. The best support channel (phone, email, ticket, or chat)
+2. Priority level (low, medium, high)
+3. Appropriate contact information
+4. A clear reason for this recommendation
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "channel": "phone|email|ticket|chat",
+  "priority": "low|medium|high",
+  "contact": "contact phone number or support channel name",
+  "name": "Support channel name",
+  "reason": "Brief explanation why this channel is best",
+  "email": "globalsupport@company.com"
+}`;
+
+    try {
+      const aiResponse = await callAI(routingPrompt, {
+        maxTokens: 150,
+        temperature: 0.3,
+        systemPrompt: 'You are a customer support routing expert. Always respond with valid JSON only.'
+      });
+
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const route = JSON.parse(jsonMatch[0]);
+        res.json({
+          intent,
+          route,
+          suggestedChannel: route.channel || 'chat',
+          message: `Based on your ${intent} inquiry, we recommend using ${route.name || 'Support'} for the best support experience.`
+        });
+      } else {
+        // Fallback to AI-generated response if JSON parsing fails
+        throw new Error('AI response not in expected format');
       }
-    };
-
-    const route = routingRules[intent] || routingRules['general'];
-    
-    // Adjust based on urgency if provided
-    if (urgency === 'high' && route.channel !== 'phone') {
-      route.channel = 'phone';
-      route.contact = '1800-123-4567';
-      route.priority = 'high';
-      route.reason = 'High urgency issues should be handled via phone';
+    } catch (error) {
+      // If AI fails, use AI to generate a simple recommendation
+      const fallbackPrompt = `Recommend a support channel for: ${intent} issue. Respond with: "chat" or "email" or "ticket" or "phone"`;
+      const fallbackResponse = await callAI(fallbackPrompt, { maxTokens: 5, temperature: 0.2 }).catch(() => 'chat');
+      const fallbackChannel = fallbackResponse.toLowerCase().trim().split(/\s+/)[0];
+      
+      res.json({
+        intent,
+        route: {
+          channel: fallbackChannel || 'chat',
+          priority: 'medium',
+          contact: 'Live Chat',
+          name: 'General Support',
+          reason: 'AI-recommended support channel',
+          email: 'globalsupport@company.com'
+        },
+        suggestedChannel: fallbackChannel || 'chat',
+        message: `We recommend using ${fallbackChannel || 'Live Chat'} for your ${intent} inquiry.`
+      });
     }
-
-    res.json({
-      intent,
-      route,
-      suggestedChannel: route.channel,
-      message: `Based on your ${intent} inquiry, we recommend using ${route.name} for the best support experience.`
-    });
   } catch (error) {
     console.error('Smart routing error:', error);
     res.json({
@@ -292,14 +347,23 @@ app.post('/api/smart-route', async (req, res) => {
         priority: 'normal',
         contact: 'Live Chat',
         name: 'General Support',
-        email: 'support@heavenmatch.com'
+        email: 'globalsupport@company.com'
       },
       suggestedChannel: 'chat'
     });
   }
 });
 
-// AI Enhanced FAQ endpoint - context-aware FAQ answers
+/**
+ * AI Enhanced FAQ endpoint - context-aware FAQ answers
+ * Purpose: Searches FAQ database and provides context-aware answers using AI
+ * Uses conversation history to provide more relevant answers than simple keyword matching
+ * POST /api/faq-search
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.query - The user's search query
+ * @param {Array} req.body.conversation - Optional conversation history for context
+ * @returns {Object} JSON response with answer, source (faq/ai), and matching FAQ item if found
+ */
 app.post('/api/faq-search', async (req, res) => {
   try {
     const { query, conversation } = req.body;
@@ -315,77 +379,79 @@ app.post('/api/faq-search', async (req, res) => {
       return res.status(500).json({ error: 'AI API key not configured' });
     }
 
-    // FAQ database (in production, this would be in a database)
-    const faqs = [
-      { question: 'How do I reset my password?', answer: 'Click on "Forgot Password" on the login page. Enter your registered email address. You will receive a password reset link in your email. Click the link and follow the instructions to create a new password.', category: 'account' },
-      { question: 'How do I update my profile?', answer: 'Log in to your account and go to "My Profile". Click on "Edit Profile" to update your information, photos, preferences, and other details. Make sure to save your changes before leaving the page.', category: 'profile' },
-      { question: 'How do I cancel my subscription?', answer: 'Go to your account settings, then click on "Billing" or "Subscription". Find the "Cancel Subscription" option and follow the prompts. Your subscription will remain active until the end of your current billing period.', category: 'payment' },
-      { question: 'How do I report a fake profile or scam?', answer: 'Click on the profile you want to report, then click the "Report" button. Select the reason for reporting (fake profile, scam, inappropriate content, etc.) and provide details. Our safety team will review your report within 24 hours.', category: 'safety' },
-      { question: 'How do you verify profiles?', answer: 'We verify profiles through multiple methods including phone verification, email verification, and photo verification. Premium members can request additional verification badges to increase their profile credibility.', category: 'safety' },
-      { question: 'Can I get a refund?', answer: 'Refunds are considered on a case-by-case basis. Please contact our billing team at billing@heavenmatch.com within 14 days of your purchase with your transaction details and reason for refund request.', category: 'payment' },
-      { question: 'How do I delete my account?', answer: 'Go to your account settings, then click on "Account" and select "Delete Account". Please note that this action is irreversible and all your data will be permanently deleted.', category: 'account' },
-      { question: 'How do I change my profile visibility?', answer: 'Go to "My Profile" > "Privacy Settings" > "Profile Visibility". You can choose to make your profile visible to all, only to premium members, or hide it completely.', category: 'profile' }
-    ];
-
-    // Build context from conversation
+    // Pure AI FAQ search - AI has knowledge of common FAQs and answers intelligently
     const conversationContext = conversation ? 
       conversation.map(msg => `${msg.sender}: ${msg.text}`).join('\n') : '';
 
-    // Create FAQ-enhanced prompt
-    const faqPrompt = `Based on this user query and our FAQ database, provide the most relevant answer. If no FAQ matches exactly, provide a helpful general response.
+    // AI-powered FAQ search with intelligent knowledge
+    const faqPrompt = `You are an expert customer support assistant for HeavenMatch matrimony/matchmaking services. You have comprehensive knowledge of common questions and answers.
+
+IMPORTANT: The company support email is: globalsupport@company.com
+- Always use globalsupport@company.com when recommending users to contact support via email
+- Use this email for all email-related support communications
 
 User Query: "${query}"
 ${conversationContext ? `Conversation Context:\n${conversationContext}\n` : ''}
 
-FAQ Database:
-${faqs.map((faq, i) => `${i + 1}. Q: ${faq.question}\n   A: ${faq.answer}`).join('\n\n')}
+Based on your knowledge of HeavenMatch services, provide a helpful and accurate answer to the user's query. 
+- If the query is about common topics (password reset, profile updates, billing, safety, account management, profile matching), provide detailed step-by-step guidance
+- If the query is unique or specific, provide the best possible answer based on standard practices
+- When mentioning email support, always use: globalsupport@company.com
+- Be concise (under 100 words)
+- Be helpful and friendly
 
-Provide a helpful answer based on the FAQ database or general knowledge about HeavenMatch matrimony services. Be concise (under 100 words):`;
+Answer:`;
 
     try {
       const answer = await callAI(faqPrompt, {
-        maxTokens: 150,
+        maxTokens: 200,
         temperature: 0.5,
-        systemPrompt: 'You are a helpful customer support assistant for HeavenMatch matrimony services.'
+        systemPrompt: 'You are a knowledgeable customer support assistant for HeavenMatch matrimony services. You understand all aspects of the service including account management, profile features, billing, safety, and matchmaking.'
       });
 
-      // Find best matching FAQ
-      const queryLower = query.toLowerCase();
-      const matchingFAQ = faqs.find(faq => 
-        faq.question.toLowerCase().includes(queryLower) ||
-        faq.answer.toLowerCase().includes(queryLower)
-      );
-
       res.json({
-        answer: answer.trim() || (matchingFAQ ? matchingFAQ.answer : 'I can help you with that. Please contact our support team for more information.'),
-        source: matchingFAQ ? 'faq' : 'ai',
-        faq: matchingFAQ || null
+        answer: answer.trim() || 'I can help you with that. Please contact our support team at globalsupport@company.com for more information.',
+        source: 'ai',
+        faq: null
       });
     } catch (error) {
-      // Fallback to simple keyword matching
-      const queryLower = query.toLowerCase();
-      const matchingFAQ = faqs.find(faq => 
-        faq.question.toLowerCase().includes(queryLower) ||
-        faq.answer.toLowerCase().includes(queryLower)
-      );
+      // If AI fails, let AI generate a simple helpful response
+      const fallbackAnswer = await callAI(`Answer this question about HeavenMatch: "${query}"`, {
+        maxTokens: 100,
+        temperature: 0.5
+      }).catch(() => 'I can help you with that. Please contact our support team at globalsupport@company.com for more information.');
       
       res.json({
-        answer: matchingFAQ ? matchingFAQ.answer : 'I can help you with that. Please contact our support team at support@heavenmatch.com for more information.',
-        source: matchingFAQ ? 'faq' : 'general',
-        faq: matchingFAQ || null
+        answer: fallbackAnswer.trim() || 'I can help you with that. Please contact our support team at globalsupport@company.com for more information.',
+        source: 'ai',
+        faq: null
       });
     }
   } catch (error) {
     console.error('FAQ search error:', error);
     res.json({
-      answer: 'I can help you with that. Please contact our support team at support@heavenmatch.com for more information.',
+      answer: 'I can help you with that. Please contact our support team at globalsupport@company.com for more information.',
       source: 'general',
       faq: null
     });
   }
 });
 
-// AI Create Ticket endpoint
+/**
+ * AI Create Ticket endpoint
+ * Purpose: Creates a support ticket with user information and issue details
+ * Generates a unique ticket ID and determines priority based on intent
+ * POST /api/create-ticket
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - User's name
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.phone - User's phone number (optional)
+ * @param {string} req.body.subject - Ticket subject line
+ * @param {string} req.body.message - Detailed issue description
+ * @param {string} req.body.intent - Detected intent category
+ * @param {string} req.body.priority - Ticket priority level (optional, auto-determined if not provided)
+ * @returns {Object} JSON response with ticket ID, ticket object, and success message
+ */
 app.post('/api/create-ticket', async (req, res) => {
   try {
     const { name, email, phone, subject, message, intent, priority } = req.body;
@@ -397,8 +463,31 @@ app.post('/api/create-ticket', async (req, res) => {
     // Generate ticket ID
     const ticketId = 'HM-' + Date.now().toString().slice(-8);
     
-    // Determine priority based on intent
-    const ticketPriority = priority || (intent === 'safety' ? 'high' : intent === 'technical' ? 'medium' : 'normal');
+    // AI determines priority based on message content and intent
+    let ticketPriority = priority;
+    if (!ticketPriority) {
+      const priorityPrompt = `Analyze this support request and determine the priority level (low, medium, high, urgent).
+
+Intent: ${intent}
+Message: "${message}"
+Subject: "${subject || 'Support Request'}"
+
+Consider urgency, impact, and issue type. Respond with ONLY one word: "low", "medium", "high", or "urgent"`;
+
+      try {
+        const priorityResponse = await callAI(priorityPrompt, {
+          maxTokens: 5,
+          temperature: 0.2
+        });
+        ticketPriority = priorityResponse.toLowerCase().trim().split(/\s+/)[0];
+        // Validate priority
+        if (!['low', 'medium', 'high', 'urgent'].includes(ticketPriority)) {
+          ticketPriority = 'medium';
+        }
+      } catch (error) {
+        ticketPriority = 'medium';
+      }
+    }
     
     // Create ticket object (in production, save to database)
     const ticket = {
@@ -429,7 +518,17 @@ app.post('/api/create-ticket', async (req, res) => {
   }
 });
 
-// Hugging Face API proxy endpoint
+/**
+ * Hugging Face API proxy endpoint (Universal AI Chat)
+ * Purpose: Main chat endpoint that processes user messages and returns AI responses
+ * Acts as a proxy to various AI providers (OpenRouter, OpenAI, Hugging Face) to avoid CORS issues
+ * POST /api/chat
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.prompt - The user's message to process
+ * @param {string} req.body.model - Optional model name (defaults to configured model)
+ * @returns {Object} JSON response with cleaned AI-generated text response
+ * @throws {Error} Various error types (MODEL_LOADING, RATE_LIMIT, AUTH_ERROR, NETWORK_ERROR, etc.)
+ */
 app.post('/api/chat', async (req, res) => {
   try {
     const { prompt, model } = req.body;
@@ -517,7 +616,16 @@ IMPORTANT:
   }
 });
 
-// AI Sentiment Analysis endpoint
+/**
+ * AI Sentiment Analysis endpoint
+ * Purpose: Analyzes the emotional tone and sentiment of user messages
+ * Helps customize responses based on user's emotional state (angry, frustrated, happy, etc.)
+ * POST /api/analyze-sentiment
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.message - The user message to analyze
+ * @param {Array} req.body.conversation - Optional conversation history for context
+ * @returns {Object} JSON response with sentiment, emotion, urgency level, and tone
+ */
 app.post('/api/analyze-sentiment', async (req, res) => {
   try {
     const { message, conversation } = req.body;
@@ -558,20 +666,21 @@ JSON:`;
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const sentiment = JSON.parse(jsonMatch[0]);
-        // Ensure valid emotion values
-        const validEmotions = ['happy', 'sad', 'angry', 'frustrated', 'worried', 'confused', 'annoyed', 'excited', 'grateful', 'disappointed', 'satisfied', 'calm', 'nervous', 'relieved', 'impatient', 'hopeful', 'upset', 'content'];
-        const validSentiments = ['positive', 'neutral', 'negative', 'frustrated', 'urgent', 'angry', 'sad', 'excited', 'confused', 'worried', 'annoyed', 'grateful', 'satisfied', 'disappointed'];
-        
-        if (!validEmotions.includes(sentiment.emotion)) {
-          sentiment.emotion = 'calm';
-        }
-        if (!validSentiments.includes(sentiment.sentiment)) {
-          sentiment.sentiment = sentiment.emotion === 'happy' || sentiment.emotion === 'grateful' || sentiment.emotion === 'satisfied' ? 'positive' : 
-                                sentiment.emotion === 'angry' || sentiment.emotion === 'frustrated' || sentiment.emotion === 'annoyed' ? 'negative' : 'neutral';
-        }
+        // Trust AI's analysis - no hardcoded validation
         res.json(sentiment);
       } else {
-        res.json({ sentiment: 'neutral', emotion: 'calm', urgency: 'medium', tone: 'neutral' });
+        // If JSON parsing fails, let AI generate a simple sentiment
+        const fallbackSentiment = await callAI(`Analyze sentiment: "${message}". Respond with: "positive", "neutral", or "negative"`, {
+          maxTokens: 5,
+          temperature: 0.2
+        }).catch(() => 'neutral');
+        
+        res.json({ 
+          sentiment: fallbackSentiment.toLowerCase().trim() || 'neutral', 
+          emotion: 'calm', 
+          urgency: 'medium', 
+          tone: 'neutral' 
+        });
       }
     } catch (error) {
       res.json({ sentiment: 'neutral', emotion: 'calm', urgency: 'medium', tone: 'neutral' });
@@ -582,7 +691,15 @@ JSON:`;
   }
 });
 
-// AI Language Detection endpoint
+/**
+ * AI Language Detection endpoint
+ * Purpose: Detects the language of user messages to provide multilingual support
+ * Helps identify if user is communicating in a language other than English
+ * POST /api/detect-language
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.message - The message to analyze for language detection
+ * @returns {Object} JSON response with detected language name and detection success status
+ */
 app.post('/api/detect-language', async (req, res) => {
   try {
     const { message } = req.body;
@@ -595,21 +712,69 @@ app.post('/api/detect-language', async (req, res) => {
       return res.status(500).json({ error: 'AI API key not configured' });
     }
 
-    const langPrompt = `Detect the language of this message. Respond with ONLY the language name in English (e.g., "English", "Hindi", "Spanish", "French", etc.):
+    // Use AI to intelligently detect language - no hardcoded rules
+    // AI will analyze the message and determine the language accurately
+    const langPrompt = `You are an expert language detection system. Analyze the message and determine its language accurately.
 
-"${message}"
+CRITICAL ANALYSIS RULES:
+1. **English Detection**: 
+   - Messages like "hi", "hello", "hey", "yes", "no", "ok", "thanks", "help" are ENGLISH
+   - Messages written in Roman/Latin script (A-Z, a-z) with English words are ENGLISH
+   - Common English greetings and phrases are ENGLISH
+   - Short messages in English are ENGLISH, not Hindi
 
-Language:`;
+2. **Hindi Detection**:
+   - Messages containing Devanagari script (हिंदी, नमस्ते, etc.) are HINDI
+   - Messages written in English letters but clearly Hindi words (like "namaste" as greeting, "dhanyavad" as thank you) can be HINDI
+   - Only detect Hindi if there's clear indication of Hindi language
+
+3. **Other Languages**:
+   - Detect other languages if message contains their script or clear linguistic patterns
+
+4. **Accuracy First**:
+   - Be precise - if uncertain, default to English
+   - "hi", "hello", "help" are ALWAYS English, never Hindi
+   - Analyze character patterns, word structure, and linguistic markers
+
+Message to analyze: "${message}"
+
+Respond with ONLY the language name (e.g., "English", "Hindi", "Spanish", "French", etc.):`;
 
     try {
       const response = await callAI(langPrompt, {
-        maxTokens: 10,
-        temperature: 0.1
+        maxTokens: 15,
+        temperature: 0.1 // Low temperature for consistent, accurate detection
       });
 
-      const language = response.trim().split('\n')[0].trim();
-      res.json({ language: language || 'English', detected: true });
+      // Clean and normalize the AI response
+      let language = response.trim().split('\n')[0].trim();
+      // Remove any quotes, extra characters, or explanations
+      language = language.replace(/^["']|["']$/g, '').trim();
+      language = language.replace(/^Language:?\s*/i, '').trim();
+      language = language.split(' ')[0]; // Take only first word (language name)
+      
+      // If response is empty or invalid, default to English
+      if (!language || language.length === 0) {
+        language = 'English';
+      }
+      
+      // Normalize language name: capitalize first letter, lowercase the rest
+      // This handles variations like "english", "ENGLISH", "English"
+      const normalizedLanguage = language.charAt(0).toUpperCase() + language.slice(1).toLowerCase();
+      
+      // Check if it's actually a different language (not English)
+      const isEnglish = normalizedLanguage.toLowerCase() === 'english';
+      
+      // Return normalized language name (capitalize first letter for display)
+      const displayLanguage = normalizedLanguage;
+      
+      res.json({ 
+        language: displayLanguage, 
+        detected: !isEnglish // Only mark as detected if it's not English
+      });
     } catch (error) {
+      // On error, default to English (safer default)
+      console.error('Language detection AI error:', error);
       res.json({ language: 'English', detected: false });
     }
   } catch (error) {
@@ -618,7 +783,16 @@ Language:`;
   }
 });
 
-// AI Smart Quick Replies endpoint
+/**
+ * AI Smart Quick Replies endpoint
+ * Purpose: Generates context-aware quick reply suggestions based on user messages
+ * Provides users with helpful pre-written responses to speed up conversation
+ * POST /api/quick-replies
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.message - The user's current message
+ * @param {Array} req.body.conversation - Optional conversation history for context
+ * @returns {Object} JSON response with array of up to 3 quick reply suggestions
+ */
 app.post('/api/quick-replies', async (req, res) => {
   try {
     const { message, conversation } = req.body;
@@ -663,7 +837,15 @@ JSON array:`;
   }
 });
 
-// AI Conversation Summary endpoint
+/**
+ * AI Conversation Summary endpoint
+ * Purpose: Creates a concise summary of the entire conversation history
+ * Useful for creating support tickets or providing context to human agents
+ * POST /api/summarize-conversation
+ * @param {Object} req.body - Request body
+ * @param {Array} req.body.conversation - Array of conversation messages
+ * @returns {Object} JSON response with a 2-3 sentence summary of the conversation
+ */
 app.post('/api/summarize-conversation', async (req, res) => {
   try {
     const { conversation } = req.body;
@@ -702,7 +884,18 @@ Summary:`;
   }
 });
 
-// AI Smart Escalation endpoint
+/**
+ * AI Smart Escalation endpoint
+ * Purpose: Determines if a support issue should be escalated to a human agent
+ * Considers user frustration, issue complexity, conversation length, and safety concerns
+ * POST /api/should-escalate
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.message - The user's current message
+ * @param {Array} req.body.conversation - Conversation history
+ * @param {string} req.body.sentiment - Detected sentiment (optional)
+ * @param {string} req.body.intent - Detected intent category
+ * @returns {Object} JSON response with escalation decision (true/false) and reason
+ */
 app.post('/api/should-escalate', async (req, res) => {
   try {
     const { message, conversation, sentiment, intent } = req.body;
@@ -715,38 +908,67 @@ app.post('/api/should-escalate', async (req, res) => {
       return res.status(500).json({ error: 'AI API key not configured' });
     }
 
-    const escalationPrompt = `Should this customer support issue be escalated to a human agent? Consider:
-- User frustration level
-- Complexity of issue
-- Repeated questions
-- Safety concerns
+    const conversationContext = conversation ? 
+      conversation.map(msg => `${msg.sender}: ${msg.text}`).join('\n') : '';
 
-Respond with ONLY: "yes" or "no"
+    const escalationPrompt = `You are an expert customer support escalation system. Analyze if this issue needs human agent escalation.
+
+Consider:
+- User frustration and emotional state
+- Complexity and uniqueness of the issue
+- Repeated questions or lack of resolution
+- Safety and security concerns
+- Urgency and criticality
 
 Message: "${message}"
 Sentiment: ${sentiment || 'neutral'}
 Intent: ${intent || 'general'}
+${conversationContext ? `Conversation:\n${conversationContext}` : ''}
 ${conversation ? `Conversation length: ${conversation.length} messages` : ''}
 
-Escalate (yes/no):`;
+Respond with ONLY a JSON object:
+{
+  "escalate": true or false,
+  "reason": "Brief explanation for your decision"
+}`;
 
     try {
       const response = await callAI(escalationPrompt, {
-        maxTokens: 5,
-        temperature: 0.2
+        maxTokens: 100,
+        temperature: 0.2,
+        systemPrompt: 'You are an escalation expert. Always respond with valid JSON only.'
       });
 
-      const shouldEscalate = response.toLowerCase().trim().includes('yes');
-      
-      // Auto-escalate for safety issues or high urgency
-      const autoEscalate = intent === 'safety' || sentiment === 'urgent' || sentiment === 'frustrated';
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const escalation = JSON.parse(jsonMatch[0]);
+        res.json({ 
+          escalate: escalation.escalate || false,
+          reason: escalation.reason || 'AI analysis complete'
+        });
+      } else {
+        // Fallback: AI determines with simple prompt
+        const simpleResponse = await callAI(`Should this issue be escalated to human? "${message}" - Respond: "yes" or "no"`, {
+          maxTokens: 3,
+          temperature: 0.2
+        }).catch(() => 'no');
+        
+        res.json({ 
+          escalate: simpleResponse.toLowerCase().includes('yes'),
+          reason: 'AI analysis indicates escalation need'
+        });
+      }
+    } catch (error) {
+      // Pure AI fallback - no hardcoded safety check
+      const fallbackResponse = await callAI(`Should "${message}" be escalated? Respond: "yes" or "no"`, {
+        maxTokens: 3,
+        temperature: 0.2
+      }).catch(() => 'no');
       
       res.json({ 
-        escalate: shouldEscalate || autoEscalate,
-        reason: shouldEscalate ? 'Complex issue requiring human attention' : 'AI can handle this'
+        escalate: fallbackResponse.toLowerCase().includes('yes'),
+        reason: 'AI analysis based on message content'
       });
-    } catch (error) {
-      res.json({ escalate: intent === 'safety', reason: 'Default escalation logic' });
     }
   } catch (error) {
     console.error('Escalation check error:', error);
@@ -754,11 +976,22 @@ Escalate (yes/no):`;
   }
 });
 
-// Health check endpoint
+/**
+ * Health check endpoint
+ * Purpose: Simple endpoint to verify the backend server is running and accessible
+ * Used for debugging and monitoring server status
+ * GET /api/health
+ * @returns {Object} JSON response with server status information
+ */
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Hugging Face Proxy' });
 });
 
+/**
+ * Server startup and initialization
+ * Purpose: Starts the Express server on the configured port and displays startup information
+ * Handles port conflicts and provides setup instructions if API key is missing
+ */
 app.listen(PORT, () => {
   console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
   console.log(`✅ AI Provider: ${AI_PROVIDER.toUpperCase()}`);

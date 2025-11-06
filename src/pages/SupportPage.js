@@ -1,3 +1,8 @@
+/**
+ * SupportPage Component
+ * Purpose: Main support center page displaying support options, hours, SLA information, and ticket system
+ * Provides multiple ways to get help (tickets, live chat, phone, WhatsApp)
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import TicketSystem from '../components/TicketSystem';

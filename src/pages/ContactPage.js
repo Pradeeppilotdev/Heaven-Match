@@ -1,13 +1,25 @@
+/**
+ * ContactPage Component
+ * Purpose: Displays contact information and contact form for user inquiries
+ * Shows corporate address, phone numbers, email, WhatsApp, and social media links
+ * Integrates with live chat widget to auto-fill contact form
+ */
 import React, { useState } from 'react';
 import ContactForm from '../components/ContactForm';
 import LiveChatWidget from '../components/LiveChatWidget';
 import './ContactPage.css';
 
 const ContactPage = () => {
+  // State to control live chat widget visibility
   const [showLiveChat, setShowLiveChat] = useState(false);
+  // State to store form data extracted from chat
   const [formData, setFormData] = useState(null);
 
-  // Handle auto-fill from chat
+  /**
+   * handleFormFill - Handles auto-filling contact form from chat-extracted data
+   * Purpose: Receives user information extracted from chat conversation and passes it to contact form
+   * @param {Object} info - User information object (name, email, phone, subject) extracted from chat
+   */
   const handleFormFill = (info) => {
     setFormData(info);
   };

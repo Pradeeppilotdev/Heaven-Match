@@ -1,3 +1,8 @@
+/**
+ * LocationsPage Component
+ * Purpose: Displays office locations including corporate headquarters, regional offices in India, and global offices
+ * Shows contact information, addresses, and map for each location
+ */
 import React from 'react';
 import './LocationsPage.css';
 

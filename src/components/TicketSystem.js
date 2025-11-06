@@ -1,3 +1,8 @@
+/**
+ * TicketSystem Component
+ * Purpose: Allows users to create support tickets and track existing tickets
+ * Handles ticket creation, form validation, and displays ticket status
+ */
 import React, { useState } from 'react';
 import './TicketSystem.css';
 
@@ -26,11 +31,22 @@ const TicketSystem = () => {
     'Other'
   ];
 
+  /**
+   * handleChange - Handles input field changes in ticket form
+   * Purpose: Updates ticket form state when user modifies any field
+   * @param {Event} e - The change event from the input element
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTicketData({ ...ticketData, [name]: value });
   };
 
+  /**
+   * handleSubmit - Handles ticket form submission
+   * Purpose: Creates a new support ticket with unique ID, sets status, and shows confirmation
+   * Generates ticket number in format: HM-XXXXXXXX
+   * @param {Event} e - The form submit event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -61,6 +77,12 @@ const TicketSystem = () => {
     }, 5000);
   };
 
+  /**
+   * handleTrackTicket - Handles ticket tracking form submission
+   * Purpose: Allows users to check the status of an existing ticket by ticket number
+   * Simulates ticket lookup and displays status information
+   * @param {Event} e - The form submit event
+   */
   const handleTrackTicket = (e) => {
     e.preventDefault();
     const trackNumber = e.target.trackNumber.value;

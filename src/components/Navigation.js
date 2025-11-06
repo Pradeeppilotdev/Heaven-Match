@@ -1,11 +1,23 @@
+/**
+ * Navigation Component
+ * Purpose: Main navigation bar component with responsive mobile menu
+ * Displays navigation links and highlights the active route
+ */
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navigation.css';
 
 const Navigation = () => {
+  // State to control mobile menu open/close
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
+  /**
+   * isActive - Checks if a navigation path is currently active
+   * Purpose: Determines which navigation link should be highlighted based on current route
+   * @param {string} path - The path to check against current location
+   * @returns {boolean} True if the path matches current location
+   */
   const isActive = (path) => location.pathname === path;
 
   const navItems = [

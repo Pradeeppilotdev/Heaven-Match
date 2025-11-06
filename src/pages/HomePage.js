@@ -1,3 +1,8 @@
+/**
+ * HomePage Component
+ * Purpose: Main landing page displaying welcome message, trust badges, contact methods, and quick links
+ * Provides overview of HeavenMatch services and various ways to contact support
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './HomePage.css';

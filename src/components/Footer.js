@@ -1,8 +1,14 @@
+/**
+ * Footer Component
+ * Purpose: Displays site footer with company information, links, contact details, and social media
+ * Provides navigation links organized by category (Company, Support, Legal)
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
+  // Get current year for copyright display
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {

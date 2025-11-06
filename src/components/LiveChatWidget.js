@@ -1,3 +1,11 @@
+/**
+ * LiveChatWidget Component
+ * Purpose: AI-powered live chat widget that provides customer support with sentiment analysis, intent detection, and smart routing
+ * Features: AI chat, intent detection, sentiment analysis, user info extraction, ticket creation, profile suggestions, FAQ search
+ * @param {boolean} isOpen - Controls whether the chat widget is visible
+ * @param {Function} onToggle - Callback function to toggle chat widget visibility
+ * @param {Function} onFormFill - Optional callback to fill contact form with extracted user info
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import './LiveChatWidget.css';
 
@@ -32,10 +40,49 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
   // Get model from environment variable (token is handled by backend)
   const HF_MODEL = process.env.REACT_APP_HF_MODEL || 'meta-llama/Meta-Llama-3-8B-Instruct';
 
+  /**
+   * getBackendURL - Gets the correct backend URL for API calls
+   * Purpose: Automatically detects the correct backend URL whether accessed from localhost or network (mobile)
+   * Handles both development and production environments
+   * @returns {string} The backend API URL
+   */
+  const getBackendURL = () => {
+    // If environment variable is set, use it (highest priority)
+    if (process.env.REACT_APP_PROXY_URL) {
+      return process.env.REACT_APP_PROXY_URL;
+    }
+    
+    // In production, try to use same origin first (backend should be on same domain)
+    if (process.env.NODE_ENV === 'production') {
+      // If backend is on same domain, use same origin
+      const origin = window.location.origin;
+      // Remove port if exists, then add backend port
+      const baseUrl = origin.includes(':') ? origin.split(':').slice(0, -1).join(':') : origin;
+      return `${baseUrl}:3001`;
+    }
+    
+    // In development, detect if accessing from network IP or localhost
+    const hostname = window.location.hostname;
+    
+    // If accessing from localhost, use localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:3001';
+    }
+    
+    // If accessing from network IP (like 192.168.x.x or 10.x.x.x), use that IP
+    // This allows mobile devices on same network to connect
+    if (hostname.match(/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/)) {
+      return `http://${hostname}:3001`;
+    }
+    
+    // Fallback to localhost
+    return 'http://localhost:3001';
+  };
+
   // Debug: Check backend connection (only in development)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       fetch(`${PROXY_URL}/api/health`)
         .then(res => res.json())
         .then(data => {
@@ -49,6 +96,10 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
     }
   }, []);
 
+  /**
+   * scrollToBottom - Scrolls chat messages to the bottom
+   * Purpose: Ensures the latest message is visible when new messages are added
+   */
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -62,6 +113,13 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  /**
+   * buildPromptFromHistory - Builds AI prompt with conversation history
+   * Purpose: Creates a formatted prompt including system instructions and conversation context for AI
+   * @param {string} userMessage - The current user message
+   * @param {Array} currentMessages - Array of previous conversation messages
+   * @returns {string} Formatted prompt string for AI processing
+   */
   const buildPromptFromHistory = (userMessage, currentMessages) => {
     const systemInstruction = `You are a helpful customer support assistant for HeavenMatch matrimony website.
 
@@ -79,7 +137,7 @@ FAQs (brief answers):
 4) Report abuse? → Safety Hotline 1800-999-8888
 5) Profile visibility? → Profile > Privacy > Visibility
 6) Delete account? → Profile > Account > Delete
-7) Refunds? → Email billing@heavenmatch.com
+7) Refunds? → Email globalsupport@company.com
 8) Verification? → Profile > Verification`;
 
     const historyLines = [];
@@ -94,12 +152,20 @@ FAQs (brief answers):
     return `${systemInstruction}\nConversation so far:\n${historyLines.join('\n')}\n\nAssistant:`;
   };
 
+  /**
+   * callHuggingFace - Makes API call to backend AI service
+   * Purpose: Sends user prompt to backend proxy which routes to configured AI provider
+   * Handles timeout, errors, and network issues
+   * @param {string} prompt - The formatted prompt to send to AI
+   * @returns {Promise<string>} AI-generated response text
+   * @throws {Error} Various error types (TIMEOUT, MODEL_LOADING, NETWORK_ERROR, etc.)
+   */
   const callHuggingFace = async (prompt) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     
-    // Use backend proxy to avoid CORS issues
-    const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+    // Use backend proxy to avoid CORS issues - auto-detect correct URL
+    const PROXY_URL = getBackendURL();
     
     try {
       const res = await fetch(`${PROXY_URL}/api/chat`, {
@@ -157,6 +223,14 @@ FAQs (brief answers):
     }
   };
 
+  /**
+   * getBotResponse - Gets AI response for user message
+   * Purpose: Processes user message, builds prompt, calls AI, and returns formatted response
+   * Handles various error scenarios with user-friendly error messages
+   * @param {string} userMessage - The user's message
+   * @param {Array} currentMessages - Current conversation history
+   * @returns {Promise<string>} AI-generated response or error message
+   */
   const getBotResponse = async (userMessage, currentMessages) => {
     try {
       const prompt = buildPromptFromHistory(userMessage, currentMessages);
@@ -177,47 +251,52 @@ FAQs (brief answers):
 
       // Backend connection errors
       if (errorMsg.includes('NETWORK_ERROR') && errorMsg.includes('BACKEND')) {
-        return "The backend server is not running. Please start it with 'npm run server' or use 'npm run dev' to run both frontend and backend together. For immediate assistance, contact us at support@heavenmatch.com or call 1800-123-4567.";
+        return "The backend server is not running. Please start it with 'npm run server' or use 'npm run dev' to run both frontend and backend together. For immediate assistance, contact us at globalsupport@company.com or call 1800-123-4567.";
       }
 
       // Configuration/Auth errors
       if (errorMsg.includes('API TOKEN') || errorMsg.includes('NOT CONFIGURED') || errorMsg.includes('AUTH_ERROR')) {
-        return "I apologize, but there's a configuration issue with my AI system. Please contact our support team directly at support@heavenmatch.com or call 1800-123-4567 for immediate assistance.";
+        return "I apologize, but there's a configuration issue with my AI system. Please contact our support team directly at globalsupport@company.com or call 1800-123-4567 for immediate assistance.";
       }
       
       // Model loading (503) - common with Hugging Face
       if (errorMsg.includes('MODEL_LOADING')) {
         const timeMatch = errorMsg.match(/(\d+)/);
         const waitTime = timeMatch ? timeMatch[1] : '10-20';
-        return `The AI model is currently loading. Please wait ${waitTime} seconds and try again. For immediate assistance, please contact us at support@heavenmatch.com or call 1800-123-4567.`;
+        return `The AI model is currently loading. Please wait ${waitTime} seconds and try again. For immediate assistance, please contact us at globalsupport@company.com or call 1800-123-4567.`;
       }
 
       // Rate limiting (429)
       if (errorMsg.includes('RATE_LIMIT') || errorMsg.includes('429') || errorString.includes('quota') || errorString.includes('rate limit')) {
-        return "I'm currently experiencing high demand. Please wait a moment and try again, or contact our support team at support@heavenmatch.com or call 1800-123-4567.";
+        return "I'm currently experiencing high demand. Please wait a moment and try again, or contact our support team at globalsupport@company.com or call 1800-123-4567.";
       }
       
       // Network/connection errors
       if (errorMsg.includes('NETWORK_ERROR') || errorMsg.includes('TIMEOUT') || 
           errorString.includes('network') || errorString.includes('timeout') || 
           errorString.includes('fetch failed') || errorString.includes('failed to fetch')) {
-        return "I'm having trouble connecting right now. Please check your internet connection and try again. For immediate help, contact us at support@heavenmatch.com or call 1800-123-4567.";
+        return "I'm having trouble connecting right now. Please check your internet connection and try again. For immediate help, contact us at globalsupport@company.com or call 1800-123-4567.";
       }
       
       // API errors (500, 502, etc.)
       if (errorMsg.includes('API_ERROR') || errorString.includes('500') || errorString.includes('502') || errorString.includes('503')) {
-        return "I'm experiencing technical difficulties. Please try again in a moment, or contact our support team at support@heavenmatch.com or call 1800-123-4567 for immediate assistance.";
+        return "I'm experiencing technical difficulties. Please try again in a moment, or contact our support team at globalsupport@company.com or call 1800-123-4567 for immediate assistance.";
       }
       
       // Default fallback
-      return "I apologize, but I'm having trouble processing your request right now. Please try again in a moment, or contact our support team at support@heavenmatch.com or call 1800-123-4567 for immediate assistance.";
+      return "I apologize, but I'm having trouble processing your request right now. Please try again in a moment, or contact our support team at globalsupport@company.com or call 1800-123-4567 for immediate assistance.";
     }
   };
 
-  // Detect intent from user message
+  /**
+   * detectIntent - Detects user intent from message
+   * Purpose: Categorizes user messages into intent types (billing, technical, safety, etc.) for smart routing
+   * @param {string} message - The user message to analyze
+   * @returns {Promise<string>} Detected intent category (billing, technical, safety, account, profile_match, general)
+   */
   const detectIntent = async (message) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/detect-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,10 +313,16 @@ FAQs (brief answers):
     return 'general';
   };
 
-  // Extract user info from conversation
+  /**
+   * extractUserInfo - Extracts user contact information from conversation
+   * Purpose: Automatically finds and extracts name, email, phone, and subject from chat conversation
+   * Helps pre-fill contact forms and create tickets without manual data entry
+   * @param {Array} conversation - Array of conversation messages
+   * @returns {Promise<Object>} Object with extracted info (name, email, phone, subject)
+   */
   const extractUserInfo = async (conversation) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/extract-info`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -255,10 +340,16 @@ FAQs (brief answers):
     return { name: '', email: '', phone: '', subject: '' };
   };
 
-  // Smart routing - suggest best support channel
+  /**
+   * getSmartRoute - Gets recommended support channel based on intent
+   * Purpose: Suggests the best support channel (phone, email, ticket, chat) for the user's issue
+   * @param {string} intent - The detected intent category
+   * @param {string} message - The user's message
+   * @returns {Promise<Object|null>} Routing recommendation with channel, contact info, and reasoning
+   */
   const getSmartRoute = async (intent, message) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/smart-route`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -276,10 +367,16 @@ FAQs (brief answers):
     return null;
   };
 
-  // Analyze sentiment
+  /**
+   * analyzeSentiment - Analyzes emotional tone and sentiment of user message
+   * Purpose: Detects user's emotional state (angry, frustrated, happy, etc.) to customize responses
+   * @param {string} message - The user message to analyze
+   * @param {Array} conversation - Optional conversation history for context
+   * @returns {Promise<Object>} Sentiment analysis result (sentiment, emotion, urgency, tone)
+   */
   const analyzeSentiment = async (message, conversation) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/analyze-sentiment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -301,12 +398,21 @@ FAQs (brief answers):
     return { sentiment: 'neutral', emotion: 'calm', urgency: 'medium', tone: 'neutral' };
   };
 
-  // Detect language
+  /**
+   * detectLanguage - Detects the language of user message
+   * Purpose: Identifies if user is communicating in a language other than English for multilingual support
+   * Updates the detected language state for ALL languages (including English) to properly reset when user switches languages
+   * @param {string} message - The message to analyze
+   * @returns {Promise<Object>} Language detection result (language name, detected boolean)
+   */
   const detectLanguage = async (message) => {
     try {
-      if (!message || typeof message !== 'string') return { language: 'English', detected: false };
+      if (!message || typeof message !== 'string') {
+        setDetectedLanguage('English');
+        return { language: 'English', detected: false };
+      }
       
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/detect-language`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -315,21 +421,35 @@ FAQs (brief answers):
       
       if (response.ok) {
         const data = await response.json();
-        if (data && data.detected && data.language && data.language !== 'English') {
-          setDetectedLanguage(data.language);
+        // Always update the detected language state, even if it's English
+        // This ensures the UI properly resets when user switches back to English
+        if (data && data.language) {
+          // Normalize language name for consistent comparison (capitalize first letter)
+          const normalizedLang = data.language.charAt(0).toUpperCase() + data.language.slice(1).toLowerCase();
+          setDetectedLanguage(normalizedLang);
+        } else {
+          setDetectedLanguage('English');
         }
         return data || { language: 'English', detected: false };
       }
     } catch (error) {
       console.error('Language detection error:', error);
+      // Reset to English on error
+      setDetectedLanguage('English');
     }
     return { language: 'English', detected: false };
   };
 
-  // Get quick replies
+  /**
+   * getQuickReplies - Gets AI-generated quick reply suggestions
+   * Purpose: Provides context-aware quick reply options to speed up user responses
+   * @param {string} message - The current user message
+   * @param {Array} conversation - Optional conversation history for context
+   * @returns {Promise<Object>} Object with array of quick reply suggestions (max 3)
+   */
   const getQuickReplies = async (message, conversation) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/quick-replies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -352,10 +472,18 @@ FAQs (brief answers):
     return { replies: [] };
   };
 
-  // Check if should escalate
+  /**
+   * checkEscalation - Determines if issue should be escalated to human agent
+   * Purpose: Evaluates if user needs human support based on complexity, frustration, and issue type
+   * @param {string} message - The user's current message
+   * @param {Array} conversation - Conversation history
+   * @param {string} sentiment - Detected sentiment
+   * @param {string} intent - Detected intent category
+   * @returns {Promise<Object>} Escalation decision (escalate boolean, reason)
+   */
   const checkEscalation = async (message, conversation, sentiment, intent) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/should-escalate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -383,10 +511,15 @@ FAQs (brief answers):
     return { escalate: false, reason: 'Error checking escalation' };
   };
 
-  // Summarize conversation
+  /**
+   * summarizeConversation - Creates summary of conversation
+   * Purpose: Generates a concise summary of the entire conversation for ticket creation or agent handoff
+   * @param {Array} conversation - Array of conversation messages
+   * @returns {Promise<string|null>} 2-3 sentence summary of the conversation
+   */
   const summarizeConversation = async (conversation) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/summarize-conversation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -403,33 +536,42 @@ FAQs (brief answers):
     return null;
   };
 
-  // Get profile suggestions based on gender
-  const getProfileSuggestions = (gender) => {
-    const profiles = {
-      male: [
-        '👤 Rajesh Kumar, 28, Software Engineer, Delhi',
-        '👤 Amit Sharma, 32, Doctor, Mumbai',
-        '👤 Vikram Singh, 30, Business Owner, Bangalore',
-        '👤 Rohit Patel, 29, Lawyer, Ahmedabad'
-      ],
-      female: [
-        '👤 Priya Sharma, 26, Teacher, Delhi',
-        '👤 Anjali Patel, 28, Doctor, Mumbai',
-        '👤 Sneha Reddy, 27, Software Engineer, Bangalore',
-        '👤 Kavita Desai, 29, Business Analyst, Pune'
-      ]
-    };
+  /**
+   * getProfileSuggestions - Returns AI-generated profile suggestions based on gender preference
+   * Purpose: AI intelligently generates diverse and realistic profile suggestions for matrimony/matchmaking service
+   * @param {string} gender - Gender preference ('male' or 'female')
+   * @returns {Promise<string>} Formatted string with AI-generated profile suggestions
+   */
+  const getProfileSuggestions = async (gender) => {
+    try {
+      const PROXY_URL = getBackendURL();
+      const response = await fetch(`${PROXY_URL}/api/generate-profiles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gender })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.suggestions || 'I can help you find profiles! Please visit our "Browse Profiles" section.';
+      }
+    } catch (error) {
+      console.error('Profile generation error:', error);
+    }
     
-    const profileList = profiles[gender] || [];
-    return profileList.length > 0 
-      ? profileList.join('\n\n') + '\n\n💡 You can view full profiles and connect with them by visiting our "Browse Profiles" section. Would you like me to help you with anything else?'
-      : 'I apologize, but I couldn\'t find profiles at the moment. Please visit our "Browse Profiles" section or contact our support team.';
+    // Fallback: AI generates inline if API fails
+    return `I can help you find ${gender} profiles! Please visit our "Browse Profiles" section to explore matches. Would you like me to help you with anything else?`;
   };
 
-  // Enhanced FAQ search
+  /**
+   * searchFAQ - Searches FAQ database for relevant answers
+   * Purpose: Finds and returns FAQ answers matching user's query with AI-enhanced context matching
+   * @param {string} query - The user's search query
+   * @returns {Promise<Object|null>} FAQ search result with answer, source, and matching FAQ item
+   */
   const searchFAQ = async (query) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/faq-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -449,10 +591,17 @@ FAQs (brief answers):
     return null;
   };
 
-  // Create support ticket
+  /**
+   * createTicket - Creates a support ticket from chat conversation
+   * Purpose: Converts chat conversation into a formal support ticket with extracted user info
+   * @param {Object} info - User information object (name, email, phone, subject)
+   * @param {string} intent - Detected intent category
+   * @param {string} message - Issue description or conversation summary
+   * @returns {Promise<Object|null>} Ticket creation result with ticket ID and details
+   */
   const createTicket = async (info, intent, message) => {
     try {
-      const PROXY_URL = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001';
+      const PROXY_URL = getBackendURL();
       const response = await fetch(`${PROXY_URL}/api/create-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -476,6 +625,12 @@ FAQs (brief answers):
     return null;
   };
 
+  /**
+   * handleSendMessage - Handles sending user messages in chat
+   * Purpose: Main message handler that processes user input, detects intent, gets AI response, 
+   * analyzes sentiment, and manages conversation flow including profile requests and ticket creation
+   * @param {Event} e - Form submit event or synthetic event from quick replies
+   */
   const handleSendMessage = async (e) => {
     if (e && e.preventDefault) {
     e.preventDefault();
@@ -563,7 +718,7 @@ FAQs (brief answers):
       if (gender) {
         setWaitingForProfileGender(false);
         setShowProfileQuestion(false);
-        const suggestions = getProfileSuggestions(gender);
+        const suggestions = await getProfileSuggestions(gender);
         setMessages(prev => {
           const updated = [...prev, userMessage];
           const profileHeader = `Great! Here are some ${gender} profiles for you:`;
@@ -925,7 +1080,7 @@ FAQs (brief answers):
           }
         } else {
           setMessages(current => [...current, {
-            text: 'I apologize, but I encountered an error. Please contact our support team at support@heavenmatch.com or call 1800-123-4567 for assistance.',
+            text: 'I apologize, but I encountered an error. Please contact our support team at globalsupport@company.com or call 1800-123-4567 for assistance.',
             sender: 'bot',
             time: new Date().toLocaleTimeString()
           }]);
@@ -950,7 +1105,11 @@ FAQs (brief answers):
     })();
   };
 
-  // Handle ticket creation from chat with summary
+  /**
+   * handleCreateTicket - Creates support ticket from chat conversation
+   * Purpose: Creates a formal support ticket with conversation summary and user information
+   * Called when user accepts ticket creation offer from chat
+   */
   const handleCreateTicket = async () => {
     setIsTyping(true);
     
@@ -978,7 +1137,7 @@ FAQs (brief answers):
       setShowCreateTicket(false);
     } else {
       setMessages(prev => [...prev, {
-        text: 'I had trouble creating the ticket. Please use the contact form or email us at support@heavenmatch.com',
+        text: 'I had trouble creating the ticket. Please use the contact form or email us at globalsupport@company.com',
         sender: 'bot',
         time: new Date().toLocaleTimeString()
       }]);
@@ -1289,13 +1448,13 @@ FAQs (brief answers):
                       <span>Call {suggestedRoute?.contact || ''}</span>
                     </button>
                   )}
-                  {suggestedRoute?.email && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.location.href = `mailto:${suggestedRoute?.email || ''}`;
-                        }}
+                  
+                  {/* Always show email option with globalsupport@company.com */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `mailto:globalsupport@company.com`;
+                    }}
                         style={{
                           padding: '12px 16px',
                           background: '#f472b6',
@@ -1337,11 +1496,9 @@ FAQs (brief answers):
                           wordBreak: 'break-word',
                           fontFamily: 'monospace'
                         }}>
-                          {suggestedRoute?.email || ''}
+                          globalsupport@company.com
                         </span>
                       </div>
-                    </>
-                  )}
                 </div>
                 
                 {/* Click Hint - Centered */}
@@ -1362,11 +1519,8 @@ FAQs (brief answers):
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Profile Gender Selection */}
-          {showProfileQuestion && waitingForProfileGender && (
+            {/* Profile Gender Selection */}
+            {showProfileQuestion && waitingForProfileGender && (
             <div style={{
               padding: '12px',
               background: '#f0f4ff',
@@ -1384,10 +1538,10 @@ FAQs (brief answers):
               </p>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setWaitingForProfileGender(false);
                     setShowProfileQuestion(false);
-                    const suggestions = getProfileSuggestions('male');
+                    const suggestions = await getProfileSuggestions('male');
                     setMessages(prev => [...prev, {
                       text: 'Male',
                       sender: 'user',
@@ -1431,10 +1585,10 @@ FAQs (brief answers):
                   <span>Male Profiles</span>
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setWaitingForProfileGender(false);
                     setShowProfileQuestion(false);
-                    const suggestions = getProfileSuggestions('female');
+                    const suggestions = await getProfileSuggestions('female');
                     setMessages(prev => [...prev, {
                       text: 'Female',
                       sender: 'user',
@@ -1479,10 +1633,10 @@ FAQs (brief answers):
                 </button>
               </div>
             </div>
-          )}
+            )}
 
-          {/* Quick Replies */}
-          {quickReplies.length > 0 && (
+            {/* Quick Replies */}
+            {quickReplies.length > 0 && (
             <div style={{
               padding: '8px 12px',
               background: '#f8f9fa',
@@ -1547,10 +1701,10 @@ FAQs (brief answers):
                 </button>
               ))}
             </div>
-          )}
+            )}
 
-          {/* Sentiment Indicator - Shows for ALL emotions */}
-          {sentiment && typeof sentiment === 'object' && sentiment.sentiment && sentiment.sentiment !== 'neutral' && (
+            {/* Sentiment Indicator - Shows for ALL emotions */}
+            {sentiment && typeof sentiment === 'object' && sentiment.sentiment && sentiment.sentiment !== 'neutral' && (
             <div style={{
               padding: '6px 12px',
               background: 
@@ -1608,10 +1762,10 @@ FAQs (brief answers):
                  'Emotion detected - providing personalized support'}
               </span>
             </div>
-          )}
+            )}
 
-          {/* Language Detector */}
-          {detectedLanguage && detectedLanguage !== 'English' && (
+            {/* Language Detector */}
+            {detectedLanguage && detectedLanguage !== 'English' && (
             <div style={{
               padding: '6px 12px',
               background: '#e7f3ff',
@@ -1625,10 +1779,10 @@ FAQs (brief answers):
               <i className="fas fa-language"></i>
               <span>Detected language: {detectedLanguage}</span>
             </div>
-          )}
+            )}
 
-          {/* Escalation Offer */}
-          {showEscalation && (
+            {/* Escalation Offer */}
+            {showEscalation && (
             <div style={{
               padding: '12px',
               background: '#fff3cd',
@@ -1675,8 +1829,12 @@ FAQs (brief answers):
                 Connect to Human Agent
               </button>
             </div>
-          )}
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
 
+          {/* Input Form - Fixed at bottom, outside scrollable area */}
           <form className="chat-input-form" onSubmit={handleSendMessage}>
             <input
               type="text"
