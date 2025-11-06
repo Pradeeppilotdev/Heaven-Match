@@ -1,8 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 // Gemini Configuration (Profile Enrichment & Ranking)
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+// Supports both Vite (VITE_*) and CRA (REACT_APP_*) env styles
+const GEMINI_API_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || process.env.REACT_APP_GEMINI_API_KEY;
+const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 const GEMINI_MODEL = "gemini-2.5-pro";
 
 
@@ -22,6 +23,9 @@ export const enrichProfileWithAI = async (basicProfile) => {
 
 // --- Gemini: Chatbot Function ---
 export const getChatbotResponse = async (history, newMessage) => {
+  if (!ai) {
+    return "AI is not configured. Please set REACT_APP_GEMINI_API_KEY. Meanwhile, you can continue navigating the app.";
+  }
   const geminiHistory = history.map(msg => ({ 
     role: msg.role === 'model' ? 'model' : 'user', 
     parts: [{ text: msg.content }] 
@@ -190,6 +194,40 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
 }
 `;
 
+  if (!ai) {
+    // Immediate fallback path when AI is not configured
+    const genderExtracted = extractGender(userMessage);
+    const ageRangeExtracted = extractAgeRange(userMessage);
+    const fallbackData = {
+      ...collectedData,
+      ...(genderExtracted && !collectedData.gender && { gender: genderExtracted }),
+      ...(ageRangeExtracted && !collectedData.ageRange && { ageRange: ageRangeExtracted })
+    };
+    const missingFields = requiredFields.filter(field => !fallbackData[field] || fallbackData[field] === null || fallbackData[field] === '');
+    if (missingFields.length === 0) {
+      return {
+        updatedData: fallbackData,
+        nextMessage: "Perfect! I have all the information I need. Let me find your perfect matches...",
+        isComplete: true
+      };
+    }
+    const fieldQuestions = {
+      gender: "What is your gender? (Male, Female, or Other)",
+      ageRange: "What age range are you looking for in a partner? (e.g., 28-35)",
+      income: "What is your approximate income range? (e.g., 20-30 LPA or approx 25-30 LPA)",
+      location: "What is your location? (e.g., Mumbai, Bangalore, Delhi)",
+      hobbies: "What are your main hobbies or interests? (can include sports, e.g., Hiking, Reading, Cooking, Cricket)",
+      profession: "What is your current profession or job? (e.g., Software Engineer, Doctor, Teacher)",
+      education: "What is your education level? (e.g., Bachelor's in Engineering, MBA, PhD)"
+    };
+    const nextField = missingFields[0];
+    return {
+      updatedData: fallbackData,
+      nextMessage: fieldQuestions[nextField],
+      isComplete: false
+    };
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
@@ -301,6 +339,11 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
  * @returns {Promise<Array<string>>} A promise that resolves to an array of profile IDs, ranked by compatibility.
  */
 export const getGeminiRankedRecommendations = async (candidateProfiles, userProfile) => {
+    // Fallback: if no API key configured, return a simple deterministic ordering
+    if (!GEMINI_API_KEY) {
+        console.warn('REACT_APP_GEMINI_API_KEY missing. Using local fallback ranking.');
+        return candidateProfiles.slice(0, 8).map(p => p.id);
+    }
     
     // Construct a detailed prompt using the user's actual profile data
     const prompt = `
@@ -366,6 +409,7 @@ export const getGeminiRankedRecommendations = async (candidateProfiles, userProf
     } catch (error) {
         console.error("Gemini Ranking API Error:", error);
         console.error("Error details:", error.message, error.stack);
-        throw error; // Re-throw to let caller handle it
+        // Fallback to local ordering so the UI keeps working
+        return candidateProfiles.slice(0, 8).map(p => p.id);
     }
 };

@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/theme.css';
+
+:root {
+  --primary-color: #ec4899; /* pink-500 */
+  --text-light: #ffffff;
+  --text-dark: #111827; /* gray-900 */
+  --card-background: #ffffff;
+  --background-light: #ffffff;
+  --border-color: #fbcfe8; /* pink-200 */
+  --shadow-subtle: 0 10px 25px rgba(236, 72, 153, 0.15);
+}
+
 * {
   margin: 0;
   padding: 0;

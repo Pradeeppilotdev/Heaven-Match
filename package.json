@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@google/genai": "^1.29.0",
+    "@heroicons/react": "^2.2.0",
+    "axios": "^1.13.2",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^8.0.7",
     "react-router-dom": "^7.9.5",
     "react-scripts": "5.0.1",
     "react-transition-group": "^4.4.5"

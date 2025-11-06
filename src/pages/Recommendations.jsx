@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { mockProfiles } from "../data/mockUser";
 import { fetchProfiles } from "../services/api";
 import MatchCard from "../components/MatchCard";
-import PageHeader from "../components/PageHeader";
+//import PageHeader from "../components/PageHeader";
 import Chatbot from "../components/Chatbot";
 import WelcomeModal from "../components/WelcomeModal";
 
@@ -118,10 +118,10 @@ export default function Recommendations() {
         />
       )}
       
-      <PageHeader 
+      {/* <PageHeader 
         onToggleDark={() => console.log('Dark mode removed')} 
         isDark={false} 
-      />
+      /> */}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         

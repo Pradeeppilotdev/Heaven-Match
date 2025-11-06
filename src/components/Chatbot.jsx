@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getChatbotResponse, processQuestionnaireResponse } from "../services/ai"; 
 import { generateRecommendationsFromUserData } from "../services/api";
-import ReactMarkdown from 'react-markdown'; 
 import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'; 
 
 // Clean Send Icon
@@ -231,8 +230,8 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
                 key={index} 
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] p-3 rounded-xl break-words shadow-md ${msg.role === 'user' ? userColor + ' rounded-br-none' : modelColor + ' rounded-tl-none'}`}>
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <div className={`max-w-[85%] p-3 rounded-xl break-words shadow-md whitespace-pre-wrap ${msg.role === 'user' ? userColor + ' rounded-br-none' : modelColor + ' rounded-tl-none'}`}>
+                  {msg.content}
                 </div>
               </div>
             ))}

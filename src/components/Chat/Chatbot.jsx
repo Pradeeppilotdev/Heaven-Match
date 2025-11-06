@@ -4,7 +4,7 @@ import { useChat } from '../../hooks/useChat';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatSuggestions from './ChatSuggestions';
-import Spinner from '../UI/Spinner';
+import Spinner from '../ui/Spinner';
 import '../../styles/Chat.css'; // Import CSS
 
 // function to integrate all the other pages
@@ -22,6 +22,7 @@ const Chatbot = () => {
     };
 
     return (
+        <div className="container mx-auto px-4 py-12 flex justify-center">
         <div className="chatbot-page">
             <div className="chatbot-header">
                 <h2>Heaven Match AI</h2>
@@ -58,6 +59,7 @@ const Chatbot = () => {
                 onSend={sendMessage} 
                 disabled={isLoading} 
             />
+        </div>
         </div>
     );
 };

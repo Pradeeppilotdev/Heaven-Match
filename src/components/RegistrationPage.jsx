@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import '../styles/register.css'
 
 // Constants for form initial states
 const INITIAL_UPLOAD_FORM = {

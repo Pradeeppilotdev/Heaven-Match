@@ -1,0 +1,33 @@
+.reg-container { background: linear-gradient(135deg, #fff0f6, #ffe4ef); min-height: 100vh; padding: 2rem 1rem; }
+.reg-header { max-width: 1100px; margin: 0 auto 1rem; display: flex; align-items: center; gap: 10px; }
+.reg-header .logo-heart { background:#fce7f3; color:#db2777; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; }
+.reg-header .brand h1 { color:#db2777; margin:0; font-weight:700; }
+.reg-header .tag { color:#9d174d; margin:0; }
+
+.reg-card { max-width:1100px; margin:0 auto; background:#fff; border-radius:18px; box-shadow: 0 20px 40px rgba(219,39,119,.15); padding:24px; display:grid; grid-template-columns: 1fr 300px; gap:24px; }
+.reg-card h2 { margin:0 0 12px; color:#111827; }
+.modes { display:flex; gap:8px; margin-bottom:12px; }
+.modes button { border:1px solid #fbcfe8; background:#fff; color:#9d174d; padding:8px 12px; border-radius:10px; cursor:pointer; }
+.modes button.active, .modes button:hover { background: linear-gradient(90deg,#ec4899,#db2777); color:#fff; border-color: transparent; }
+
+.reg-form { display:flex; flex-direction:column; gap:12px; }
+.reg-form label { display:flex; flex-direction:column; gap:6px; color:#374151; font-weight:600; }
+.reg-form input, .reg-form textarea, .reg-form select { border:2px solid #e5e7eb; border-radius:12px; padding:.65rem .9rem; transition: all .2s ease; background:#fff; }
+.reg-form input:focus, .reg-form textarea:focus, .reg-form select:focus { border-color:#ec4899; outline: none; box-shadow:0 6px 20px rgba(236,72,153,.15); }
+.reg-form .flex-row { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+.pink-box { border:1px solid #fbcfe8; background:#fff5fa; padding:16px; border-radius:14px; }
+.actions { display:flex; gap:10px; margin-top:4px; }
+.actions button { background: linear-gradient(90deg,#ec4899,#db2777); color:#fff; border:none; padding:.8rem 1.1rem; border-radius:12px; cursor:pointer; box-shadow: 0 10px 25px rgba(236,72,153,.25); }
+.actions .secondary { background:#fff; color:#9d174d; border:2px solid #fbcfe8; box-shadow:none; }
+
+.help { border-left:1px dashed #fbcfe8; padding-left:16px; }
+.help-profile-large { height: 260px; background:#fff0f6; border:1px dashed #fbcfe8; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+
+.reg-footer { max-width:1100px; margin: 14px auto 0; color:#9d174d; text-align:center; }
+
+@media (max-width: 1024px) {
+  .reg-card { grid-template-columns: 1fr; }
+  .help { display:none; }
+  .reg-form .flex-row { grid-template-columns: 1fr; }
+}
+

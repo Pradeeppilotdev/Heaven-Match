@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Button from './ui/Button'; 
 
 /**
@@ -19,7 +20,13 @@ export const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const menuItems = ['Home', 'Find Matches', 'Success Stories', 'About Us'];
+  const menuItems = [
+    { label: 'Home', to: '/' },
+    { label: 'Chat', to: '/chat' },
+    { label: 'Register', to: '/register' },
+    { label: 'Contact', to: '/contact' },
+    { label: 'Recommendations', to: '/recommendations' }
+  ];
 
   return (
     // Sticky header with conditional classes for scroll effect (backdrop blur, shadow).
@@ -27,37 +34,34 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo and Branding */}
-          <div className="flex items-center gap-2 cursor-pointer group">
+          <Link to="/" className="flex items-center gap-2 cursor-pointer group">
             <div className="p-2 bg-pink-100 rounded-lg group-hover:bg-pink-200 transition-colors">
               <Heart className="w-6 h-6 text-pink-600 fill-pink-600" />
             </div>
             <span className="text-xl font-bold text-pink-600">Heaven Match</span>
-          </div>
+          </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {menuItems.map((item) => (
-              <a 
-                key={item} 
-                // Dynamically creates anchor links (e.g., #find-matches).
-                href={`#${item.toLowerCase().replace(' ', '-')}`} 
+              <Link
+                key={item.to}
+                to={item.to}
                 className="text-gray-700 hover:text-pink-600 transition-colors font-medium relative group"
               >
-                {item}
-                {/* Underline hover effect */}
+                {item.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-pink-600 transition-all group-hover:w-full"></span>
-              </a>
+              </Link>
             ))}
           </nav>
           
           {/* Action Buttons and Mobile Toggler */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="hidden md:inline-flex">
-              Sign In
-            </Button>
-            <Button className="hidden sm:flex">
-              Register Free
-            </Button>
+            <Link to="/register" className="hidden sm:flex">
+              <Button>
+                Register Free
+              </Button>
+            </Link>
             {/* Mobile menu toggle button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -75,16 +79,18 @@ export const Header = () => {
         <div className="md:hidden border-t border-pink-100 bg-white">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {menuItems.map((item) => (
-              <a 
-                key={item} 
-                href={`#${item.toLowerCase().replace(' ', '-')}`} 
+              <Link 
+                key={item.to}
+                to={item.to}
                 className="text-gray-700 hover:text-pink-600 py-2 font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item}
-              </a>
+                {item.label}
+              </Link>
             ))}
-            <Button className="w-full mt-2">Register Free</Button>
+            <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="w-full mt-2">
+              <Button className="w-full">Register Free</Button>
+            </Link>
           </nav>
         </div>
       )}

@@ -15,26 +15,26 @@ const buttonBaseClass = "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-gr
 const buttonHoverClass = "shadow-[3px_3px_0_0_rgba(236,72,153,0.5)] -translate-x-0.5 -translate-y-0.5 hover:bg-gray-100";
 
 // NOTE: onToggleDark and isDark are unused in the single-theme mode, but kept for signature compatibility
-export default function PageHeader({ onToggleDark, isDark }) { 
-  return (
-    // Clean, light header bar
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Logo container (Heart on Pink BG, rounded-xl) */}
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-pink-500 flex items-center justify-center shadow-md">
-            <LinkedHeartIcon className="w-6 h-6 text-white" /> 
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Heaven Match</h1>
-            <p className="text-xs text-gray-500 hidden sm:block">Personalized recommendations powered by AI</p>
-          </div>
-        </div>
+// export default function PageHeader({ onToggleDark, isDark }) { 
+//   return (
+//     // Clean, light header bar
+//     <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200">
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+//         <div className="flex items-center gap-2 sm:gap-3">
+//           {/* Logo container (Heart on Pink BG, rounded-xl) */}
+//           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-pink-500 flex items-center justify-center shadow-md">
+//             <LinkedHeartIcon className="w-6 h-6 text-white" /> 
+//           </div>
+//           <div>
+//             <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Heaven Match</h1>
+//             <p className="text-xs text-gray-500 hidden sm:block">Personalized recommendations powered by AI</p>
+//           </div>
+//         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Right side actions intentionally minimal; filters removed */}
-        </div>
-      </div>
-    </header>
-  );
-}
+//         <div className="flex items-center gap-2 sm:gap-3">
+//           {/* Right side actions intentionally minimal; filters removed */}
+//         </div>
+//       </div>
+//     </header>
+//   );
+//}

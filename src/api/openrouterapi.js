@@ -1,8 +1,12 @@
 // src/api/openRouter.js
-import axios from 'axios';
+// Force axios browser build to avoid Node polyfills in CRA
+import axios from 'axios/dist/browser/axios.cjs';
 import { MOCK_PROFILES } from '../data/mockProfiles'; // 💡 NEW IMPORT
 
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+// Supports both Vite (VITE_*) and CRA (REACT_APP_*) env styles
+const OPENROUTER_API_KEY =
+  ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_OPENROUTER_API_KEY)
+  || process.env.REACT_APP_OPENROUTER_API_KEY);
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL_NAME = "mistralai/mistral-7b-instruct:free"; 
 
@@ -13,7 +17,9 @@ const PROFILES_STRING = JSON.stringify(MOCK_PROFILES);
  * Sends a conversation history to the OpenRouter API.
  */
 export const getChatCompletion = async (messages) => {
-    // ... existing API key check ...
+    if (!OPENROUTER_API_KEY) {
+        throw new Error('Missing OpenRouter API key. Set REACT_APP_OPENROUTER_API_KEY in .env and restart the dev server.');
+    }
 
     // 💡 UPDATED SYSTEM MESSAGE to include the profile data
     const systemPromptContent = `
