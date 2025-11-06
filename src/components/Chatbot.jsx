@@ -26,9 +26,10 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
   const [questionnaireData, setQuestionnaireData] = useState({
     gender: null,
     ageRange: null,
-    salary: null,
+    income: null,
+    location: null,
     hobbies: null,
-    job: null,
+    profession: null,
     education: null
   });
   const [recommendations, setRecommendations] = useState(null);
@@ -40,9 +41,10 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
     setQuestionnaireData({
       gender: null,
       ageRange: null,
-      salary: null,
+      income: null,
+      location: null,
       hobbies: null,
-      job: null,
+      profession: null,
       education: null
     });
     setRecommendations(null);
@@ -92,7 +94,7 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
           recs.slice(0, 5).forEach((profile, idx) => {
             recommendationsMessage += `**${idx + 1}. ${profile.name}, ${profile.age}**\n`;
             recommendationsMessage += `   - ${profile.profession} (${profile.income || 'N/A'})\n`;
-            recommendationsMessage += `   - Interests: ${[...(profile.hobbies || []), ...(profile.sports || [])].slice(0, 3).join(', ')}\n`;
+            recommendationsMessage += `   - Interests: ${(profile.hobbies || profile.interests || []).slice(0, 5).join(', ')}\n`;
             recommendationsMessage += `   - ${profile.bio_text || profile.bio || 'No bio'}\n\n`;
           });
           
@@ -153,7 +155,7 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
       // Check if we're still in questionnaire mode and need to collect more information
       if (mode === 'questionnaire') {
         // Check if all required fields are collected
-        const requiredFields = ['gender', 'ageRange', 'salary', 'hobbies', 'job', 'education'];
+        const requiredFields = ['gender', 'ageRange', 'income', 'location', 'hobbies', 'profession', 'education'];
         const allFieldsCollected = requiredFields.every(field => 
           questionnaireData[field] !== null && questionnaireData[field] !== undefined && questionnaireData[field] !== ''
         );
@@ -202,7 +204,7 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
             {mode === 'questionnaire' && (
               <div className="flex items-center gap-2 text-xs">
                 <span className="bg-white/20 px-2 py-1 rounded-full">
-                  {Object.values(questionnaireData).filter(v => v !== null && v !== '').length}/6
+                  {Object.values(questionnaireData).filter(v => v !== null && v !== '').length}/7
                 </span>
                 {onEndQuestionnaire && (
                   <button

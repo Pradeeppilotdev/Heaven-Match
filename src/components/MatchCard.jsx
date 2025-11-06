@@ -36,8 +36,8 @@ const MatchCard = ({ profile, onInterest, onSkip }) => {
       </div>
 
       {/* MAIN CARD: Added z-10 and transition for the move-right effect */}
-      <article className="relative z-10 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:translate-x-1 hover:-translate-y-1">
-        <div className="relative overflow-hidden">
+      <article className="relative z-10 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:translate-x-1 hover:-translate-y-1 flex flex-col h-full">
+        <div className="relative overflow-hidden flex-shrink-0">
           <div className={`w-full h-64 sm:h-72 bg-gradient-to-br from-gray-100 to-gray-200 ${imageLoaded ? 'hidden' : 'block'}`} />
           <img 
             src={image} 
@@ -62,28 +62,29 @@ const MatchCard = ({ profile, onInterest, onSkip }) => {
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 flex flex-col flex-1">
           {/* Profession & Income */}
-          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium">
-            <span className="flex items-center gap-2">
-              <BriefcaseIcon className="w-4 h-4 text-pink-500" />
-              <span>{profession} ({income || 'N/A'})</span>
+          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium h-[1.75rem]">
+            <span className="flex items-center gap-2 truncate">
+              <BriefcaseIcon className="w-4 h-4 text-pink-500 flex-shrink-0" />
+              <span className="truncate">{profession} ({income || 'N/A'})</span>
             </span>
           </div>
 
-          {/* Personality Tags/Bio Snippet */}
-          <p className="text-xs text-gray-500 line-clamp-2 italic">
+          {/* Personality Tags/Bio Snippet - Fixed height */}
+          <p className="text-xs text-gray-500 line-clamp-2 italic h-[2.5rem] overflow-hidden">
             {bio || 'No bio provided.'}
           </p>
 
-          {/* Interests (Now using enriched data) */}
-          <div className="flex flex-wrap gap-2">
-            {[...(personality_tags || []), ...interests].slice(0, 4).map((tag, idx) => (
+          {/* Interests (Display exactly 5 hobbies for consistent card height) - Fixed height */}
+          <div className="flex flex-wrap gap-1.5 h-[3.5rem] overflow-hidden content-start">
+            {(interests || []).slice(0, 5).map((hobby, idx) => (
               <span 
                 key={idx}
-                className="text-xs px-3 py-1 rounded-full bg-pink-100 text-pink-700 font-medium"
+                className="text-[0.65rem] px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium"
+                title={hobby}
               >
-                {tag}
+                {hobby.length > 12 ? hobby.substring(0, 11) + '...' : hobby}
               </span>
             ))}
           </div>

@@ -1,3 +1,4 @@
+// This data is all about the static candidate profiles used for testing and development. And It's used for AI curated matchmaking.
 export const staticCandidates = [
   {
     "id": "match-a",
@@ -5,12 +6,12 @@ export const staticCandidates = [
     "age": 30,
     "profession": "Finance Analyst",
     "income": "20-30 LPA",
-    "sports": ["Cricket", "Golf"],
-    "hobbies": ["Investing", "Reading History", "Travel"],
+    "hobbies": ["Cricket", "Golf", "Investing", "Reading History", "Travel"],
     "bio_text": "Ambitious finance professional who loves weekend golf and exploring financial markets.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-finance-analyst",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-b",
@@ -18,12 +19,12 @@ export const staticCandidates = [
     "age": 28,
     "profession": "Software Engineer",
     "income": "15-25 LPA",
-    "sports": ["Badminton", "Yoga"],
-    "hobbies": ["Coding", "Painting", "Hiking"],
+    "hobbies": ["Badminton", "Yoga", "Coding", "Painting", "Hiking"],
     "bio_text": "Tech enthusiast by day, artist by night. Always up for a mountain trek.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-software-engineer",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Bangalore"
   },
   {
     "id": "match-c",
@@ -31,12 +32,12 @@ export const staticCandidates = [
     "age": 32,
     "profession": "Marketing Manager",
     "income": "18-28 LPA",
-    "sports": ["Football", "Swimming"],
-    "hobbies": ["Photography", "Cooking", "Blogging"],
+    "hobbies": ["Football", "Swimming", "Photography", "Cooking", "Blogging"],
     "bio_text": "Creative marketer who captures moments and experiments with global cuisines.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-marketing-manager",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Delhi"
   },
   {
     "id": "match-d",
@@ -44,12 +45,12 @@ export const staticCandidates = [
     "age": 29,
     "profession": "Data Scientist",
     "income": "25-35 LPA",
-    "sports": ["Tennis", "Cycling"],
-    "hobbies": ["AI/ML Research", "Reading Fiction", "Concerts"],
+    "hobbies": ["Tennis", "Cycling", "AI/ML Research", "Reading Fiction", "Concerts"],
     "bio_text": "Turning data into decisions. Passionate about music and deep learning.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-data-scientist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Hyderabad"
   },
   {
     "id": "match-e",
@@ -57,12 +58,12 @@ export const staticCandidates = [
     "age": 35,
     "profession": "Entrepreneur",
     "income": "40-60 LPA",
-    "sports": ["Squash", "Hiking"],
-    "hobbies": ["Mentoring Startups", "Travel", "Podcasting"],
+    "hobbies": ["Squash", "Hiking", "Mentoring Startups", "Travel", "Podcasting"],
     "bio_text": "Building businesses and exploring the world. Driven by innovation.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-entrepreneur",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Pune"
   },
   {
     "id": "match-f",
@@ -70,12 +71,12 @@ export const staticCandidates = [
     "age": 31,
     "profession": "UX Designer",
     "income": "16-24 LPA",
-    "sports": ["Pilates", "Rock Climbing"],
-    "hobbies": ["Sketching", "Minimalism", "Digital Art"],
+    "hobbies": ["Pilates", "Rock Climbing", "Sketching", "Minimalism", "Digital Art"],
     "bio_text": "Designing seamless experiences, one pixel at a time. Loves the outdoors.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-ux-designer",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Chennai"
   },
   {
     "id": "match-g",
@@ -83,12 +84,12 @@ export const staticCandidates = [
     "age": 33,
     "profession": "Investment Banker",
     "income": "50-75 LPA",
-    "sports": ["Polo", "Gym"],
-    "hobbies": ["Classic Cars", "Collecting Watches", "Fine Dining"],
+    "hobbies": ["Polo", "Gym", "Classic Cars", "Collecting Watches", "Fine Dining"],
     "bio_text": "Dedicated to high-stakes finance and enjoying the finer things in life.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-investment-banker",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-h",
@@ -96,12 +97,12 @@ export const staticCandidates = [
     "age": 27,
     "profession": "Product Manager",
     "income": "20-30 LPA",
-    "sports": ["Basketball", "Zumba"],
-    "hobbies": ["App Prototyping", "Reading Psychology", "Volunteering"],
+    "hobbies": ["Basketball", "Zumba", "App Prototyping", "Reading Psychology", "Volunteering"],
     "bio_text": "The bridge between business, tech, and user needs. Always seeking growth.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-product-manager",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Bangalore"
   },
   {
     "id": "match-i",
@@ -109,12 +110,12 @@ export const staticCandidates = [
     "age": 38,
     "profession": "Surgeon",
     "income": "70-100+ LPA",
-    "sports": ["Squash", "Marathon Running"],
-    "hobbies": ["Medical Ethics", "Classical Music", "Photography"],
+    "hobbies": ["Squash", "Marathon Running", "Medical Ethics", "Classical Music", "Photography"],
     "bio_text": "Focused and precise in the operating room. Finds balance through music and running.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-surgeon",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Delhi"
   },
   {
     "id": "match-j",
@@ -122,12 +123,12 @@ export const staticCandidates = [
     "age": 26,
     "profession": "Content Creator",
     "income": "12-20 LPA",
-    "sports": ["Dance", "Yoga"],
-    "hobbies": ["Video Editing", "Travel Vlogging", "Fashion"],
+    "hobbies": ["Dance", "Yoga", "Video Editing", "Travel Vlogging", "Fashion"],
     "bio_text": "Telling stories and building communities online. Next adventure is always around the corner.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-content-creator",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Gurgaon"
   },
   {
     "id": "match-k",
@@ -135,12 +136,12 @@ export const staticCandidates = [
     "age": 36,
     "profession": "Architect",
     "income": "25-35 LPA",
-    "sports": ["Badminton", "Cycling"],
-    "hobbies": ["Urban Planning", "Sketching Buildings", "Reading Philosophy"],
+    "hobbies": ["Badminton", "Cycling", "Urban Planning", "Sketching Buildings", "Reading Philosophy"],
     "bio_text": "Designing sustainable spaces and exploring the history of human habitat.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-architect",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Ahmedabad"
   },
   {
     "id": "match-l",
@@ -148,12 +149,12 @@ export const staticCandidates = [
     "age": 34,
     "profession": "Lawyer",
     "income": "35-50 LPA",
-    "sports": ["Horse Riding", "Swimming"],
-    "hobbies": ["Debate Club", "Reading Legal Thrillers", "Wine Tasting"],
+    "hobbies": ["Horse Riding", "Swimming", "Debate Club", "Reading Legal Thrillers", "Wine Tasting"],
     "bio_text": "A zealous advocate for justice and an enthusiast for a good legal challenge.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-lawyer",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Mumbai"
   },
   {
     "id": "match-m",
@@ -161,12 +162,12 @@ export const staticCandidates = [
     "age": 31,
     "profession": "AI Researcher",
     "income": "30-40 LPA",
-    "sports": ["Chess", "Table Tennis"],
-    "hobbies": ["Robotics", "Sci-Fi Movies", "Quantum Computing"],
+    "hobbies": ["Chess", "Table Tennis", "Robotics", "Sci-Fi Movies", "Quantum Computing"],
     "bio_text": "Pioneering the future of intelligent systems and seeking the next great chess match.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-ai-researcher",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Bangalore"
   },
   {
     "id": "match-n",
@@ -174,12 +175,12 @@ export const staticCandidates = [
     "age": 37,
     "profession": "CFO",
     "income": "60-90 LPA",
-    "sports": ["Power Yoga", "Running"],
-    "hobbies": ["Financial Modeling", "Collecting Art", "Gardening"],
+    "hobbies": ["Power Yoga", "Running", "Financial Modeling", "Collecting Art", "Gardening"],
     "bio_text": "Strategic finance leader with a green thumb and an appreciation for modern art.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-cfo",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Delhi"
   },
   {
     "id": "match-o",
@@ -187,12 +188,12 @@ export const staticCandidates = [
     "age": 39,
     "profession": "Pilot",
     "income": "45-65 LPA",
-    "sports": ["Flying", "Swimming"],
-    "hobbies": ["Aviation History", "Photography", "Travel"],
+    "hobbies": ["Flying", "Swimming", "Aviation History", "Photography", "Travel"],
     "bio_text": "My office is the sky. Passionate about high altitudes and world exploration.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-pilot",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-p",
@@ -200,12 +201,12 @@ export const staticCandidates = [
     "age": 30,
     "profession": "HR Manager",
     "income": "18-28 LPA",
-    "sports": ["Dance", "Volleyball"],
-    "hobbies": ["Team Building", "Mentoring", "Reading Biographies"],
+    "hobbies": ["Dance", "Volleyball", "Team Building", "Mentoring", "Reading Biographies"],
     "bio_text": "Dedicated to nurturing talent and building strong workplace cultures.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-hr-manager",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Pune"
   },
   {
     "id": "match-q",
@@ -213,12 +214,12 @@ export const staticCandidates = [
     "age": 33,
     "profession": "Venture Capitalist",
     "income": "50-75 LPA",
-    "sports": ["Skiing", "Golf"],
-    "hobbies": ["Deal Sourcing", "Global Markets", "Collecting Wine"],
+    "hobbies": ["Skiing", "Golf", "Deal Sourcing", "Global Markets", "Collecting Wine"],
     "bio_text": "Fueling the next generation of great companies. Loves the mountains and new ideas.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-venture-capitalist",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Bangalore"
   },
   {
     "id": "match-r",
@@ -226,12 +227,12 @@ export const staticCandidates = [
     "age": 29,
     "profession": "Biotech Researcher",
     "income": "22-32 LPA",
-    "sports": ["Running", "Gym"],
-    "hobbies": ["Genetic Engineering", "Gardening", "Documentaries"],
+    "hobbies": ["Running", "Gym", "Genetic Engineering", "Gardening", "Documentaries"],
     "bio_text": "Working at the cutting edge of biological science to solve real-world problems.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-biotech-researcher",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Hyderabad"
   },
   {
     "id": "match-s",
@@ -239,12 +240,12 @@ export const staticCandidates = [
     "age": 34,
     "profession": "Digital Marketer",
     "income": "15-25 LPA",
-    "sports": ["E-Sports", "Swimming"],
-    "hobbies": ["SEO", "Content Strategy", "Gaming"],
+    "hobbies": ["E-Sports", "Swimming", "SEO", "Content Strategy", "Gaming"],
     "bio_text": "Master of algorithms and digital strategy. In my downtime, I'm always gaming.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-digital-marketer",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Gurgaon"
   },
   {
     "id": "match-t",
@@ -252,12 +253,12 @@ export const staticCandidates = [
     "age": 30,
     "profession": "Interior Designer",
     "income": "15-25 LPA",
-    "sports": ["Yoga", "Pilates"],
-    "hobbies": ["Feng Shui", "Collecting Vintage Furniture", "Pottery"],
+    "hobbies": ["Yoga", "Pilates", "Feng Shui", "Collecting Vintage Furniture", "Pottery"],
     "bio_text": "Crafting beautiful and harmonious living spaces. My passion is mid-century modern design.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-interior-designer",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Mumbai"
   },
   {
     "id": "match-u",
@@ -265,12 +266,12 @@ export const staticCandidates = [
     "age": 31,
     "profession": "Cybersecurity Expert",
     "income": "28-40 LPA",
-    "sports": ["Billiards", "Running"],
-    "hobbies": ["Ethical Hacking", "True Crime Podcasts", "Gadgets"],
+    "hobbies": ["Billiards", "Running", "Ethical Hacking", "True Crime Podcasts", "Gadgets"],
     "bio_text": "Protecting digital frontiers. I'm always one step ahead of the threat.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-cybersecurity-expert",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Bangalore"
   },
   {
     "id": "match-v",
@@ -278,12 +279,12 @@ export const staticCandidates = [
     "age": 35,
     "profession": "Psychologist",
     "income": "20-30 LPA",
-    "sports": ["Meditation", "Swimming"],
-    "hobbies": ["Cognitive Research", "Reading Philosophy", "Journaling"],
+    "hobbies": ["Meditation", "Swimming", "Cognitive Research", "Reading Philosophy", "Journaling"],
     "bio_text": "Exploring the depths of the human mind and advocating for mental well-being.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-psychologist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Delhi"
   },
   {
     "id": "match-w",
@@ -291,12 +292,12 @@ export const staticCandidates = [
     "age": 42,
     "profession": "CEO",
     "income": "100+ LPA",
-    "sports": ["Cricket", "Gym"],
-    "hobbies": ["Public Speaking", "Philanthropy", "Stock Trading"],
+    "hobbies": ["Cricket", "Gym", "Public Speaking", "Philanthropy", "Stock Trading"],
     "bio_text": "Leading a global firm and committed to giving back to the community.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-CEO",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-x",
@@ -304,12 +305,12 @@ export const staticCandidates = [
     "age": 32,
     "profession": "Chef",
     "income": "18-28 LPA",
-    "sports": ["Cooking", "Yoga"],
-    "hobbies": ["Molecular Gastronomy", "Food Photography", "Herbology"],
+    "hobbies": ["Cooking", "Yoga", "Molecular Gastronomy", "Food Photography", "Herbology"],
     "bio_text": "Creating culinary experiences that are a feast for the senses. Fusion is my passion.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-chef",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Pune"
   },
   {
     "id": "match-y",
@@ -317,12 +318,12 @@ export const staticCandidates = [
     "age": 28,
     "profession": "Blockchain Developer",
     "income": "25-35 LPA",
-    "sports": ["Football", "Running"],
-    "hobbies": ["Decentralized Finance (DeFi)", "Gaming", "Coding"],
+    "hobbies": ["Football", "Running", "Decentralized Finance (DeFi)", "Gaming", "Coding"],
     "bio_text": "Building the future of the internet on the blockchain, one block at a time.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-blockchain-developer",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Bangalore"
   },
   {
     "id": "match-z",
@@ -330,12 +331,12 @@ export const staticCandidates = [
     "age": 29,
     "profession": "PR Specialist",
     "income": "15-25 LPA",
-    "sports": ["Badminton", "Pilates"],
-    "hobbies": ["Media Strategy", "Networking", "Event Planning"],
+    "hobbies": ["Badminton", "Pilates", "Media Strategy", "Networking", "Event Planning"],
     "bio_text": "Crafting compelling narratives for top brands. A true people-person and master networker.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-pr-specialist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Delhi"
   },
   {
     "id": "match-ca",
@@ -343,12 +344,12 @@ export const staticCandidates = [
     "age": 40,
     "profession": "Professor",
     "income": "30-45 LPA",
-    "sports": ["Tennis", "Cycling"],
-    "hobbies": ["Academic Research", "Mentoring", "History"],
+    "hobbies": ["Tennis", "Cycling", "Academic Research", "Mentoring", "History"],
     "bio_text": "An academic driven by curiosity and a love for teaching the next generation.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-professor",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Chennai"
   },
   {
     "id": "match-cb",
@@ -356,12 +357,12 @@ export const staticCandidates = [
     "age": 31,
     "profession": "Animator",
     "income": "12-20 LPA",
-    "sports": ["Dance", "Gym"],
-    "hobbies": ["Character Design", "Illustration", "Storyboarding"],
+    "hobbies": ["Dance", "Gym", "Character Design", "Illustration", "Storyboarding"],
     "bio_text": "Bringing stories to life through motion graphics and animation. A world creator.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-animator",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Mumbai"
   },
   {
     "id": "match-cc",
@@ -369,12 +370,12 @@ export const staticCandidates = [
     "age": 35,
     "profession": "Astrophysicist",
     "income": "28-40 LPA",
-    "sports": ["Trekking", "Chess"],
-    "hobbies": ["Stargazing", "Quantum Physics", "Writing"],
+    "hobbies": ["Trekking", "Chess", "Stargazing", "Quantum Physics", "Writing"],
     "bio_text": "Exploring the cosmos for a living. I find peace in the vastness of the universe.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-astrophysicist",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Pune"
   },
   {
     "id": "match-cd",
@@ -382,12 +383,12 @@ export const staticCandidates = [
     "age": 28,
     "profession": "Makeup Artist",
     "income": "10-18 LPA",
-    "sports": ["Yoga", "Running"],
-    "hobbies": ["Beauty Tutorials", "Skincare", "Fashion"],
+    "hobbies": ["Yoga", "Running", "Beauty Tutorials", "Skincare", "Fashion"],
     "bio_text": "Enhancing natural beauty and mastering the art of transformation.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-makeup-artist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Delhi"
   },
   {
     "id": "match-ce",
@@ -395,12 +396,12 @@ export const staticCandidates = [
     "age": 45,
     "profession": "Hotel Chain Owner",
     "income": "100+ LPA",
-    "sports": ["Golf", "Polo"],
-    "hobbies": ["Hospitality Management", "Wine Collecting", "Philanthropy"],
+    "hobbies": ["Golf", "Polo", "Hospitality Management", "Wine Collecting", "Philanthropy"],
     "bio_text": "Creating luxury experiences worldwide. A perfectionist in hospitality and business.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-hotel-owner",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-cf",
@@ -408,12 +409,12 @@ export const staticCandidates = [
     "age": 32,
     "profession": "Nutritionist",
     "income": "15-25 LPA",
-    "sports": ["Swimming", "Pilates"],
-    "hobbies": ["Meal Prep", "Wellness Coaching", "Cooking"],
+    "hobbies": ["Swimming", "Pilates", "Meal Prep", "Wellness Coaching", "Cooking"],
     "bio_text": "Dedicated to holistic health and the power of food as medicine.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-nutritionist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Bangalore"
   },
   {
     "id": "match-cg",
@@ -421,12 +422,12 @@ export const staticCandidates = [
     "age": 37,
     "profession": "VR Developer",
     "income": "20-30 LPA",
-    "sports": ["E-Sports", "Cycling"],
-    "hobbies": ["Virtual Reality", "Gaming", "3D Modeling"],
+    "hobbies": ["E-Sports", "Cycling", "Virtual Reality", "Gaming", "3D Modeling"],
     "bio_text": "Building immersive worlds in virtual reality. Always exploring new dimensions.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-vr-developer",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Hyderabad"
   },
   {
     "id": "match-ch",
@@ -434,12 +435,12 @@ export const staticCandidates = [
     "age": 33,
     "profession": "Travel Blogger",
     "income": "10-18 LPA",
-    "sports": ["Hiking", "Snorkeling"],
-    "hobbies": ["Vlogging", "Photography", "Cultural Immersion"],
+    "hobbies": ["Hiking", "Snorkeling", "Vlogging", "Photography", "Cultural Immersion"],
     "bio_text": "A storyteller by the world, sharing every journey and adventure.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-travel-blogger",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Goa"
   },
   {
     "id": "match-ci",
@@ -447,12 +448,12 @@ export const staticCandidates = [
     "age": 30,
     "profession": "Cardiologist",
     "income": "40-60 LPA",
-    "sports": ["Marathon Running", "Gym"],
-    "hobbies": ["Preventative Health", "Medical Research", "Reading"],
+    "hobbies": ["Marathon Running", "Gym", "Preventative Health", "Medical Research", "Reading"],
     "bio_text": "Dedicated to heart health and pushing my own limits in endurance sports.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-cardiologist",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Chennai"
   },
   {
     "id": "match-cj",
@@ -460,12 +461,12 @@ export const staticCandidates = [
     "age": 28,
     "profession": "Renewable Energy Engineer",
     "income": "18-28 LPA",
-    "sports": ["Cycling", "Yoga"],
-    "hobbies": ["Solar Technology", "Sustainability", "Documentaries"],
+    "hobbies": ["Cycling", "Yoga", "Solar Technology", "Sustainability", "Documentaries"],
     "bio_text": "Engineering a greener future. Passionate about sustainable technology.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-renewable-energy-engineer",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Pune"
   },
   {
     "id": "match-ck",
@@ -473,12 +474,12 @@ export const staticCandidates = [
     "age": 36,
     "profession": "Calligrapher",
     "income": "10-18 LPA",
-    "sports": ["Running", "Gym"],
-    "hobbies": ["Fountain Pens", "Hand Lettering", "Art History"],
+    "hobbies": ["Running", "Gym", "Fountain Pens", "Hand Lettering", "Art History"],
     "bio_text": "Bringing the lost art of beautiful handwriting into the modern era. My life is in the details.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-calligrapher",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Jaipur"
   },
   {
     "id": "match-cl",
@@ -486,12 +487,12 @@ export const staticCandidates = [
     "age": 30,
     "profession": "Oncologist",
     "income": "35-50 LPA",
-    "sports": ["Swimming", "Pilates"],
-    "hobbies": ["Clinical Trials", "Medical Ethics", "Classical Dance"],
+    "hobbies": ["Swimming", "Pilates", "Clinical Trials", "Medical Ethics", "Classical Dance"],
     "bio_text": "Fighting cancer with dedication and compassion. Finding my rhythm through dance.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-oncologist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Delhi"
   },
   {
     "id": "match-cm",
@@ -499,12 +500,12 @@ export const staticCandidates = [
     "age": 33,
     "profession": "Logistics CEO",
     "income": "60-90 LPA",
-    "sports": ["Squash", "Hiking"],
-    "hobbies": ["Supply Chain Optimization", "International Trade", "Mentoring"],
+    "hobbies": ["Squash", "Hiking", "Supply Chain Optimization", "International Trade", "Mentoring"],
     "bio_text": "The orchestrator of complex global logistics. I thrive on efficiency.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-logistics-CEO",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Mumbai"
   },
   {
     "id": "match-cn",
@@ -512,12 +513,12 @@ export const staticCandidates = [
     "age": 41,
     "profession": "Veterinarian",
     "income": "20-30 LPA",
-    "sports": ["Horse Riding", "Yoga"],
-    "hobbies": ["Wildlife Conservation", "Animal Rescue", "Trekking"],
+    "hobbies": ["Horse Riding", "Yoga", "Wildlife Conservation", "Animal Rescue", "Trekking"],
     "bio_text": "Caring for all creatures great and small. My heart belongs to the wild.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-veterinarian",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Bhubaneswar"
   },
   {
     "id": "match-co",
@@ -525,12 +526,12 @@ export const staticCandidates = [
     "age": 31,
     "profession": "DevOps Engineer",
     "income": "22-32 LPA",
-    "sports": ["Badminton", "Gym"],
-    "hobbies": ["Cloud Computing", "Automation", "Home Automation"],
+    "hobbies": ["Badminton", "Gym", "Cloud Computing", "Automation", "Home Automation"],
     "bio_text": "Bridging the gap between development and operations. My life is streamlined.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-devops-engineer",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Bangalore"
   },
   {
     "id": "match-cp",
@@ -538,12 +539,12 @@ export const staticCandidates = [
     "age": 27,
     "profession": "Barista Champion",
     "income": "8-15 LPA",
-    "sports": ["Dance", "Running"],
-    "hobbies": ["Coffee Roasting", "Latte Art", "Travel"],
+    "hobbies": ["Dance", "Running", "Coffee Roasting", "Latte Art", "Travel"],
     "bio_text": "Crafting the perfect cup of coffee. The aroma of roasted beans is my happy place.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-barista-champion",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Kochi"
   },
   {
     "id": "match-cq",
@@ -551,12 +552,12 @@ export const staticCandidates = [
     "age": 34,
     "profession": "Cryptocurrency Analyst",
     "income": "30-45 LPA",
-    "sports": ["Chess", "Running"],
-    "hobbies": ["Market Prediction", "DeFi", "Economics"],
+    "hobbies": ["Chess", "Running", "Market Prediction", "DeFi", "Economics"],
     "bio_text": "Decoding crypto trends and chess endgames.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-male-cryptocurrency-analyst",
-    "gender": "Male"
+    "gender": "Male",
+    "location": "Gurgaon"
   },
   {
     "id": "match-cr",
@@ -564,12 +565,12 @@ export const staticCandidates = [
     "age": 26,
     "profession": "Nail Artist",
     "income": "10-18 LPA",
-    "sports": ["Dance", "Gym"],
-    "hobbies": ["Nail Design", "Gel Art", "Fashion"],
+    "hobbies": ["Dance", "Gym", "Nail Design", "Gel Art", "Fashion"],
     "bio_text": "Painting tiny canvases on fingertips.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-nail-artist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Chandigarh"
   },
   {
     "id": "match-cs",
@@ -577,11 +578,11 @@ export const staticCandidates = [
     "age": 32,
     "profession": "Dermatologist",
     "income": "30-45 LPA",
-    "sports": ["Tennis", "Swimming"],
-    "hobbies": ["Skincare Research", "Beauty Tech", "Travel"],
+    "hobbies": ["Tennis", "Swimming", "Skincare Research", "Beauty Tech", "Travel"],
     "bio_text": "A skin scientist dedicated to health and aesthetics.",
     "embedding_vector": [],
     "image_url": "https://unsplash.com/s/photos/indian-female-dermatologist",
-    "gender": "Female"
+    "gender": "Female",
+    "location": "Mumbai"
   }
 ];

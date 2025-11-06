@@ -1,3 +1,4 @@
+// Mock Profiles for AI Matchmaking Tests. These profiles are used to simulate potential matches in the absence of real user data.
 export const mockProfiles = [
   {
     id: 1,

@@ -1,4 +1,5 @@
 // Calculates the cosine similarity between two vectors.
+//Used when Hugging Face Token is necessary now primarily the geminiApi is used for strength score and data retrieval.
 export const cosineSimilarity = (vecA, vecB) => {
     let dotProduct = 0;
     let magnitudeA = 0;

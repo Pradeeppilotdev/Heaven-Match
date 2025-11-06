@@ -2,8 +2,6 @@ import { getGeminiRankedRecommendations } from "./ai"; // <-- NEW: Import the Ge
 import { mockUserProfile, mockProfiles } from "../data/mockUser"; 
 import { staticCandidates } from "../data/staticCandidates"; 
 
-// NOTE: vectorUtils and generateEmbeddingsHF imports are REMOVED
-
 /**
  * Converts chatbot-collected data into a user profile format compatible with recommendation system
  */
@@ -18,19 +16,28 @@ const convertChatbotDataToUserProfile = (chatbotData) => {
     }
   }
 
-  // Extract career fields from job/profession
-  const careerFields = chatbotData.job ? [chatbotData.job] : [];
+  // Extract career fields from profession (previously job)
+  const careerFields = chatbotData.profession ? [chatbotData.profession] : [];
+
+  // Format income to ensure it has "LPA" suffix if missing
+  let formattedIncome = chatbotData.income || '';
+  if (formattedIncome && !formattedIncome.toUpperCase().includes('LPA')) {
+    formattedIncome = formattedIncome.includes('-') ? `${formattedIncome} LPA` : `approx ${formattedIncome} LPA`;
+  }
 
   // Create a user profile structure similar to mockUserProfile
   return {
     id: "user-chatbot-generated",
     name: "Chatbot User",
-    age: null, // Not collected in questionnaire
-    profession: chatbotData.job || "Not specified",
+    age: null, // Not collected directly (ageRange is collected instead)
+    profession: chatbotData.profession || chatbotData.job || "Not specified", // Support both field names
     interests: hobbiesArray,
+    location: chatbotData.location || "Not specified",
+    income: formattedIncome,
+    education: chatbotData.education || "Not specified",
     preference: {
       ageRange: chatbotData.ageRange || "25-35",
-      locationPriority: "Major Indian cities", // Default
+      locationPriority: chatbotData.location || "Major Indian cities",
       careerFields: careerFields,
       mustMatchInterests: hobbiesArray.slice(0, 3), // Top 3 hobbies as must-match
       values: [] // Not collected in questionnaire
@@ -48,11 +55,13 @@ export const fetchProfiles = async (count = 8, userProfile = null) => {
         ...p,
         // Add a placeholder image URL for all profiles
         image: p.image || `https://picsum.photos/seed/${p.id}/300/400`, 
-        interests: [...(p.hobbies || []), ...(p.sports || [])].slice(0, 4),
+        // Use hobbies directly (sports are now merged into hobbies)
+        interests: (p.hobbies || []).slice(0, 5), // Ensure exactly 5 hobbies
         bio: p.bio_text,
         personality_tags: p.personality_tags || [],
         income: p.income || 'N/A',
         profession: p.profession,
+        location: p.location || 'Not specified',
     }));
 
     console.log(`Prepared ${candidates.length} candidates from staticCandidates`);

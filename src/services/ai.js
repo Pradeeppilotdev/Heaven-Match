@@ -1,19 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
-// Hugging Face imports removed, as we are reverting matching logic to Gemini
 
-// --- Configuration ---
 // Gemini Configuration (Profile Enrichment & Ranking)
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const GEMINI_MODEL = "gemini-2.5-pro";
 
-// --- Hugging Face Configuration Removed ---
-// const HF_TOKEN = import.meta.env.VITE_HUGGING_FACE_API_TOKEN; 
-// ... HF variables removed ...
 
-// --- Gemini: Profile Enrichment Function (Retained) ---
+
+// --- Gemini: Profile Enrichment Function ---
 export const enrichProfileWithAI = async (basicProfile) => {
-    // ... (Enrichment logic remains the same, but unused in current flow) ...
     // Since we are using static candidates, this function is effectively deprecated for the current test.
     return { 
         profession: basicProfile.profession || 'Unknown', 
@@ -25,7 +20,7 @@ export const enrichProfileWithAI = async (basicProfile) => {
     };
 };
 
-// --- Gemini: Chatbot Function (Retained) ---
+// --- Gemini: Chatbot Function ---
 export const getChatbotResponse = async (history, newMessage) => {
   const geminiHistory = history.map(msg => ({ 
     role: msg.role === 'model' ? 'model' : 'user', 
@@ -110,7 +105,7 @@ const extractAgeRange = (text) => {
 };
 
 export const processQuestionnaireResponse = async (userMessage, collectedData, conversationHistory) => {
-  const requiredFields = ['gender', 'ageRange', 'salary', 'hobbies', 'job', 'education'];
+  const requiredFields = ['gender', 'ageRange', 'income', 'location', 'hobbies', 'profession', 'education'];
   
   // First, try to extract information using simple pattern matching before AI processing
   const extractedGender = extractGender(userMessage);
@@ -133,11 +128,12 @@ You are a matchmaking questionnaire assistant for Heaven Match. Your task is to:
 
 **Required Information to Collect:**
 - gender (user's gender: Must be exactly "Male", "Female", or "Other". Extract from: male/m/man/guy/M, female/f/woman/girl/F, other/non-binary/NB)
-- ageRange (age range preference for partner, e.g., "28-35" or "25-30")
-- salary (user's approximate salary range, e.g., "20-30 LPA" or "15-25 LPA")
-- hobbies (user's hobbies/interests, can be comma-separated or listed, e.g., "Hiking, Reading, Cooking" or "I like hiking and reading")
-- job (user's profession/job title, e.g., "Software Engineer", "Data Scientist", "Doctor")
-- education (user's education level, e.g., "Bachelor's in Engineering", "MBA", "PhD")
+- ageRange (age range preference for partner, format as "X-Y", e.g., "28-35" or "25-30". If user says single age like "27", convert to "22-32")
+- income (user's approximate income range, format like "20-30 LPA" or "25-30 LPA" or "approx 25-30 LPA")
+- location (user's location/city, e.g., "Mumbai", "Bangalore", "Delhi", "Hyderabad")
+- hobbies (user's hobbies/interests, can include sports, comma-separated or listed, e.g., "Hiking, Reading, Cooking, Cricket" or "I like hiking and reading")
+- profession (user's profession/job title, e.g., "Software Engineer", "Data Scientist", "Doctor", "Teacher")
+- education (user's education level, e.g., "Bachelor's in Engineering", "MBA", "PhD", "B.Tech")
 
 **Currently Collected Data (preserve existing values, only update if new info is found):**
 ${JSON.stringify(preExtractedData, null, 2)}
@@ -159,13 +155,14 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
 1. Extract information from the user's response:
    - gender: "Male", "Female", or "Other" (from: male/man/guy/M, female/woman/girl/F, other/non-binary/NB)
    - ageRange: Format as "X-Y" range (e.g., "27-35"). If user says single age like "27", convert to "22-32" (age-5 to age+5)
-   - salary: Any format like "20-30 LPA", "25 LPA", "15-25 LPA"
+   - income: Any format like "20-30 LPA", "25 LPA", "15-25 LPA", or "approx 25-30 LPA"
+   - location: City name (e.g., "Mumbai", "Bangalore", "Delhi", "Hyderabad")
    - hobbies: List of interests (can be comma-separated or natural language like "I like hiking and reading")
-   - job: Profession/job title (e.g., "Software Engineer", "Doctor", "Teacher")
+   - profession: Profession/job title (e.g., "Software Engineer", "Doctor", "Teacher")
    - education: Education level (e.g., "Bachelor's in Engineering", "MBA", "PhD")
 2. ONLY update fields where you found NEW information. DO NOT set fields to null.
 3. Preserve ALL existing collected data. If a field already has a value, keep it unless you found a new value for it.
-4. Identify which required fields are still missing (null/empty). Check in this order: gender, ageRange, salary, hobbies, job, education
+4. Identify which required fields are still missing (null/empty). Check in this order: gender, ageRange, income, location, hobbies, profession, education
 5. If all fields have values, set isComplete: true.
 6. If fields are missing, ask for the NEXT missing field in a natural, friendly way. Ask ONE question at a time.
 7. If user response is unclear or doesn't answer the question, politely ask for clarification but rephrase the question slightly.
@@ -181,11 +178,12 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
 {
   "updatedData": {
     "gender": "Male" or "Female" or "Other" or existing value or null,
-    "ageRange": "extracted value or existing value or null",
-    "salary": "extracted value or existing value or null",
-    "hobbies": "extracted value or existing value or null",
-    "job": "extracted value or existing value or null",
-    "education": "extracted value or existing value or null"
+    "ageRange": "extracted value (format: X-Y) or existing value or null",
+    "income": "extracted value (format: X-Y LPA) or existing value or null",
+    "location": "extracted value (city name) or existing value or null",
+    "hobbies": "extracted value (comma-separated or array) or existing value or null",
+    "profession": "extracted value (job title) or existing value or null",
+    "education": "extracted value (education level) or existing value or null"
   },
   "nextMessage": "Your next question or confirmation message",
   "isComplete": false
@@ -278,10 +276,11 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
     const fieldQuestions = {
       gender: "What is your gender? (Male, Female, or Other)",
       ageRange: "What age range are you looking for in a partner? (e.g., 28-35)",
-      salary: "What is your approximate salary range? (e.g., 20-30 LPA)",
-      hobbies: "What are your main hobbies or interests? (e.g., Hiking, Reading, Cooking)",
-      job: "What is your current profession or job?",
-      education: "What is your education level? (e.g., Bachelor's in Engineering, MBA)"
+      income: "What is your approximate income range? (e.g., 20-30 LPA or approx 25-30 LPA)",
+      location: "What is your location? (e.g., Mumbai, Bangalore, Delhi)",
+      hobbies: "What are your main hobbies or interests? (can include sports, e.g., Hiking, Reading, Cooking, Cricket)",
+      profession: "What is your current profession or job? (e.g., Software Engineer, Doctor, Teacher)",
+      education: "What is your education level? (e.g., Bachelor's in Engineering, MBA, PhD)"
     };
 
     const nextField = missingFields[0];

@@ -1,3 +1,5 @@
+
+// MockUser Profile for AI Matchmaking Tests. It's a basic mock used when no user profile is provided and API get's failed.
 export const mockUserProfile = {
   id: "user-heaven-match-123",
   name: "Target User",
