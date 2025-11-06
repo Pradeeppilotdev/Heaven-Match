@@ -1,0 +1,490 @@
+.support-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding-bottom: 3rem;
+}
+
+.support-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 4rem 2rem;
+  color: white;
+  text-align: center;
+}
+
+.support-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.support-header p {
+  font-size: 1.2rem;
+  opacity: 0.95;
+}
+
+.support-options-section {
+  margin: 3rem 0;
+}
+
+.support-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.support-option-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.support-option-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
+.option-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.option-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: white;
+  font-size: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.support-option-card:hover .option-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.support-option-card h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.support-option-card p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.support-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.support-hours-card,
+.sla-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.card-header i {
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.card-header h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0;
+}
+
+.hours-list,
+.sla-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hours-item,
+.sla-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.hours-item:hover,
+.sla-item:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.hours-item i,
+.sla-item i {
+  font-size: 1.5rem;
+  color: #667eea;
+  margin-top: 0.25rem;
+}
+
+.hours-item.highlight {
+  background: #fff5f5;
+  border: 2px solid #e74c3c;
+  border-left: 4px solid #e74c3c;
+}
+
+.hours-item.highlight strong {
+  color: #c0392b;
+  font-weight: 700;
+}
+
+.hours-item.highlight p {
+  color: #2d2d2d;
+  font-weight: 600;
+}
+
+.hours-item.highlight i {
+  color: #e74c3c;
+}
+
+.hours-item strong,
+.sla-item strong {
+  display: block;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.hours-item p,
+.sla-item p {
+  color: #2d2d2d;
+  margin: 0;
+  font-weight: 500;
+}
+
+.ticket-section {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 3rem 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-header h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.section-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.quick-links-section {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.quick-links-section h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.quick-link-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.quick-link-item:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.quick-link-item i {
+  font-size: 1.5rem;
+  color: #667eea;
+  transition: color 0.3s ease;
+}
+
+.quick-link-item:hover i {
+  color: white;
+}
+
+/* Tablet and below (1024px and below) */
+@media (max-width: 1024px) {
+  .support-info-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .support-options-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* Small tablets and large phones (968px and below) */
+@media (max-width: 968px) {
+  .support-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .support-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small tablets and large phones (768px and below) */
+@media (max-width: 768px) {
+  .support-header {
+    padding: 3rem 1.5rem;
+  }
+
+  .support-header h1 {
+    font-size: 2rem;
+  }
+
+  .support-header p {
+    font-size: 1.1rem;
+  }
+
+  .support-options-section {
+    margin: 2rem 0;
+  }
+
+  .support-options-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .support-option-card {
+    padding: 2rem;
+  }
+
+  .option-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 1.8rem;
+  }
+
+  .support-option-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .support-info-grid {
+    margin: 2rem 0;
+  }
+
+  .support-hours-card,
+  .sla-card {
+    padding: 2rem;
+  }
+
+  .card-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .hours-item,
+  .sla-item {
+    padding: 1.25rem;
+  }
+
+  .ticket-section,
+  .quick-links-section {
+    padding: 2rem 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .section-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .quick-links-section h2 {
+    font-size: 1.75rem;
+  }
+
+  .quick-links-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-link-item {
+    padding: 1.25rem;
+  }
+}
+
+/* Small phones (480px and below) */
+@media (max-width: 480px) {
+  .support-header {
+    padding: 2.5rem 1rem;
+  }
+
+  .support-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .support-header p {
+    font-size: 1rem;
+  }
+
+  .support-options-grid {
+    gap: 1.25rem;
+  }
+
+  .support-option-card {
+    padding: 1.75rem;
+  }
+
+  .option-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .support-option-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .support-option-card p {
+    font-size: 0.95rem;
+  }
+
+  .support-hours-card,
+  .sla-card {
+    padding: 1.5rem;
+  }
+
+  .card-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .card-header i {
+    font-size: 1.3rem;
+  }
+
+  .card-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .hours-item,
+  .sla-item {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .hours-item i,
+  .sla-item i {
+    font-size: 1.3rem;
+  }
+
+  .hours-item strong,
+  .sla-item strong {
+    font-size: 1rem;
+  }
+
+  .hours-item p,
+  .sla-item p {
+    font-size: 0.9rem;
+  }
+
+  .ticket-section,
+  .quick-links-section {
+    padding: 1.5rem 1rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .section-header p {
+    font-size: 1rem;
+  }
+
+  .quick-links-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .quick-link-item {
+    padding: 1rem;
+  }
+
+  .quick-link-item i {
+    font-size: 1.3rem;
+  }
+}
+
+/* Extra small phones (320px and below) */
+@media (max-width: 320px) {
+  .support-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .support-option-card {
+    padding: 1.5rem;
+  }
+
+  .support-hours-card,
+  .sla-card {
+    padding: 1.25rem;
+  }
+
+  .ticket-section,
+  .quick-links-section {
+    padding: 1.25rem 0.85rem;
+  }
+}
+

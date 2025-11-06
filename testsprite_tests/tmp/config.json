@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "backendAuthType": "API key",
+  "backendApiKey": "open router -api key",
+  "backendApiValue": "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",
+  "executionArgs": {
+    "projectName": "contact",
+    "projectPath": "C:\\Users\\System6\\Desktop\\contact",
+    "testIds": [],
+    "additionalInstruction": "Please test all features including AI chat widget, profile suggestions, intent detection, sentiment analysis, language detection, quick replies, smart routing, ticket creation, and all other AI features. Verify error handling, UI interactions, and form auto-fill work correctly.",
+    "envs": {
+      "API_KEY": "sk-user-jRfO-yOpcMzhsTbOMLP2Dee-FNKWuSYDWnehX0CPwL7j3XNQ3j0q9JvQa235cwcoHj093d45M5124YdpwltCGS840GPgaw5b34a3Ue2OToIMALady1Xstt2lBBZ6X_yeE8Q"
+    }
+  },
+  "proxy": "http://8a471284-6e33-4fe6-a78a-1e354140dadb:r8j0ryeakVV51LjZcHMeNY3VeRKkpg6v@tun.testsprite.com:8080"
+}

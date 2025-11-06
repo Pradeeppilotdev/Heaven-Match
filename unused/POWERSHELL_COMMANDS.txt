@@ -1,0 +1,29 @@
+=== PowerShell Commands for HeavenMatch Contact Page ===
+
+Step 1: Navigate to the project folder
+----------------------------------------
+cd C:\Users\System6\Desktop\contact
+
+
+Step 2: Install dependencies (if not already installed)
+--------------------------------------------------------
+npm.cmd install
+
+
+Step 3: Start the development server
+-------------------------------------
+npm.cmd start
+
+
+Alternative: Use the start script
+----------------------------------
+Right-click on START_PROJECT.ps1 and select "Run with PowerShell"
+
+
+The application will open automatically at:
+http://localhost:3000
+
+
+To stop the server:
+Press Ctrl+C in the PowerShell window
+
