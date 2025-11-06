@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 // Import necessary icons for branding and social media links.
 import { Heart, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
@@ -12,6 +13,17 @@ const Footer = () => {
   const quickLinks = ['About Us', 'How It Works', 'Success Stories', 'Blog'];
   const support = ['Help Center', 'Safety Tips', 'Contact Us', 'FAQs'];
   const legal = ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Refund Policy'];
+
+  const routeMap = {
+    'Help Center': '/help',
+    'Contact Us': '/contact',
+    'FAQs': '/help#faqs',
+    'Safety Tips': '/help#safety',
+    'Privacy Policy': '/support',
+    'Terms of Service': '/support',
+    'Cookie Policy': '/support',
+    'Refund Policy': '/support'
+  };
 
   return (
     // Base footer styling: light background, separator border.
@@ -60,9 +72,15 @@ const Footer = () => {
               <ul className="space-y-2">
                 {section.items.map((item) => (
                   <li key={item}>
-                    <a href="#" className="text-gray-600 hover:text-pink-600 transition-colors">
-                      {item}
-                    </a>
+                    {routeMap[item] ? (
+                      <Link to={routeMap[item]} className="text-gray-600 hover:text-pink-600 transition-colors">
+                        {item}
+                      </Link>
+                    ) : (
+                      <a href="/#" className="text-gray-600 hover:text-pink-600 transition-colors">
+                        {item}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

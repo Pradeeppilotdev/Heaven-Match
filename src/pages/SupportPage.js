@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
-import TicketSystem from '../components/TicketSystem';
+// Ticket system component was removed; show a styled placeholder instead
 import './SupportPage.css';
 
 const SupportPage = () => {
@@ -150,13 +150,19 @@ const SupportPage = () => {
           </section>
         </div>
 
-        {/* Ticket System */}
+        {/* Ticket System Placeholder */}
         <section className="ticket-section">
           <div className="section-header">
             <h2>Submit a Support Request</h2>
             <p>Create a ticket and track your issue status</p>
           </div>
-          <TicketSystem />
+          <div className="bg-white border border-pink-100 rounded-xl p-6 shadow-md">
+            <p className="text-gray-700">
+              Our ticket portal is coming soon. In the meantime, please email
+              <a href="mailto:support@heavenmatch.com" className="text-pink-600 font-medium"> support@heavenmatch.com</a>
+              {' '}or call <a href="tel:1800-123-4567" className="text-pink-600 font-medium">1800-123-4567</a>.
+            </p>
+          </div>
         </section>
 
         {/* Quick Links */}

@@ -1,11 +1,11 @@
 .support-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #fff0f6 0%, #ffe4ef 100%);
   padding-bottom: 3rem;
 }
 
 .support-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   padding: 4rem 2rem;
   color: white;
   text-align: center;
@@ -45,7 +45,7 @@
 .support-option-card:hover {
   transform: translateY(-10px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
+  border-color: #ec4899;
 }
 
 .option-link {
@@ -58,7 +58,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,7 +109,7 @@
 
 .card-header i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: #ec4899;
 }
 
 .card-header h2 {
@@ -141,15 +141,15 @@
 .hours-item:hover,
 .sla-item:hover {
   background: #f8f9fa;
-  border-color: #667eea;
+  border-color: #ec4899;
   transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15);
 }
 
 .hours-item i,
 .sla-item i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: #ec4899;
   margin-top: 0.25rem;
 }
 
@@ -247,15 +247,15 @@
 }
 
 .quick-link-item:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   color: white;
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
 }
 
 .quick-link-item i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: #ec4899;
   transition: color 0.3s ease;
 }
 

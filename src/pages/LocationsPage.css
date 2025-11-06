@@ -1,11 +1,11 @@
 .locations-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #fff0f6 0%, #ffe4ef 100%);
   padding-bottom: 3rem;
 }
 
 .locations-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   padding: 4rem 2rem;
   color: white;
   text-align: center;
@@ -40,7 +40,7 @@
 }
 
 .office-card.featured {
-  border: 3px solid #667eea;
+  border: 3px solid #ec4899;
   background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
 }
 
@@ -62,7 +62,7 @@
 
 .office-header h2 i,
 .office-header h3 i {
-  color: #667eea;
+  color: #ec4899;
 }
 
 .office-name {
@@ -85,7 +85,7 @@
 
 .detail-item i {
   font-size: 1.3rem;
-  color: #667eea;
+  color: #ec4899;
   margin-top: 0.25rem;
   min-width: 24px;
 }
@@ -104,13 +104,13 @@
 }
 
 .detail-item a {
-  color: #667eea;
+  color: #ec4899;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .detail-item a:hover {
-  color: #764ba2;
+  color: #db2777;
   text-decoration: underline;
 }
 
@@ -177,7 +177,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,14 +202,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: #667eea;
+  color: #ec4899;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .phone-link:hover {
-  color: #764ba2;
+  color: #db2777;
   text-decoration: underline;
 }
 

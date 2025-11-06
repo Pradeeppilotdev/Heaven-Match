@@ -28,7 +28,7 @@ export const AIIcebreakerDemo = () => {
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
     // Critical API Key Validation
-    if (!apiKey || apiKey === "REACT_APP_GEMINI_API_KEy") {
+    if (!apiKey || apiKey === "REACT_APP_GEMINI_API_KEY") {
       setError("API key is not configured.");
       setLoading(false);
       return;

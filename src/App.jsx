@@ -32,13 +32,12 @@ const HomeContent = () => {
   );
 };
 
-// Home Page Component (Now only renders the content and Footer)
+// Home Page Component (render content only; global Footer is already included)
 const HomePage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* REMOVED Header: <Header /> */}
       <HomeContent />
-      <Footer />
     </div>
   );
 };

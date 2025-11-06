@@ -1,11 +1,11 @@
 .help-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #fff0f6 0%, #ffe4ef 100%);
   padding-bottom: 3rem;
 }
 
 .help-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   padding: 4rem 2rem;
   color: white;
   text-align: center;
@@ -37,7 +37,7 @@
   left: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #667eea;
+  color: #ec4899;
   font-size: 1.2rem;
 }
 
@@ -53,8 +53,8 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+  border-color: #ec4899;
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.25);
 }
 
 .clear-search {
@@ -72,7 +72,7 @@
 }
 
 .clear-search:hover {
-  color: #667eea;
+  color: #ec4899;
 }
 
 .categories-section {
@@ -101,14 +101,14 @@
 }
 
 .category-card:hover {
-  border-color: #667eea;
+  border-color: #ec4899;
   transform: translateY(-3px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .category-card.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  border-color: #ec4899;
   color: white;
 }
 
@@ -130,7 +130,7 @@
 
 .results-count {
   font-size: 1.5rem;
-  color: #667eea;
+  color: #ec4899;
   font-weight: 400;
 }
 
@@ -160,7 +160,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,7 +181,7 @@
 }
 
 .resource-link {
-  color: #667eea;
+  color: #ec4899;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -211,7 +211,7 @@
 }
 
 .faq-item.open {
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.25);
 }
 
 .faq-question {
@@ -235,7 +235,7 @@
 }
 
 .faq-question i {
-  color: #667eea;
+  color: #ec4899;
   transition: transform 0.3s ease;
 }
 
