@@ -1,6 +1,6 @@
 import React from "react";
 // FIXED: Changed FilterIcon to FunnelIcon and added XMarkIcon for the temporary removal of Dark Mode toggle icons
-import { FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'; 
+import { XMarkIcon } from '@heroicons/react/24/outline'; 
 
 // NEW: Linked Heart Icon (White stroke for white link on pink background)
 const LinkedHeartIcon = ({ className = "w-6 h-6" }) => (
@@ -15,7 +15,7 @@ const buttonBaseClass = "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-gr
 const buttonHoverClass = "shadow-[3px_3px_0_0_rgba(236,72,153,0.5)] -translate-x-0.5 -translate-y-0.5 hover:bg-gray-100";
 
 // NOTE: onToggleDark and isDark are unused in the single-theme mode, but kept for signature compatibility
-export default function PageHeader({ onToggleDark, isDark, onFilterClick }) { 
+export default function PageHeader({ onToggleDark, isDark }) { 
   return (
     // Clean, light header bar
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200">
@@ -32,16 +32,7 @@ export default function PageHeader({ onToggleDark, isDark, onFilterClick }) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Filter button - NOW USING FunnelIcon */}
-          <button 
-            onClick={onFilterClick}
-            className={`${buttonBaseClass} hover:${buttonHoverClass}`}
-          >
-            <FunnelIcon className="w-4 h-4" />
-            Filters
-          </button>
-          
-          {/* Theme toggle removed for single-theme mode */}
+          {/* Right side actions intentionally minimal; filters removed */}
         </div>
       </div>
     </header>

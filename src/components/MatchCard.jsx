@@ -19,8 +19,10 @@ const HeartIcon = ({ className = "w-6 h-6", filled = false }) => (
 );
 
 
-const MatchCard = ({ profile, onInterest, onSkip }) => {
+const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleConnect }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [contact, setContact] = useState(null);
   // Accessing the new AI-enriched fields
   const { name, age, location, image, profession, interests = [], bio, income, personality_tags } = profile;
 
@@ -47,10 +49,19 @@ const MatchCard = ({ profile, onInterest, onSkip }) => {
             style={{ objectPosition: 'top' }} 
           />
           
-          {/* Heart Badge */}
-          <div className="absolute top-4 right-4 bg-white/90 rounded-full p-2 shadow-lg backdrop-blur-sm ring-2 ring-pink-500/50">
-            <SolidHeart className="w-5 h-5 text-pink-500 fill-pink-500/10" />
-          </div>
+          {/* Heart Badge (Like/Unlike toggle) */}
+          <button 
+            type="button"
+            onClick={() => {
+              const newLiked = !liked;
+              setLiked(newLiked);
+              if (newLiked && onInterest) onInterest(profile.id);
+            }}
+            className={`absolute top-4 right-4 rounded-full p-2 shadow-lg backdrop-blur-sm ring-2 ${liked ? 'bg-pink-500/90 ring-pink-500' : 'bg-white/90 ring-pink-500/50'}`}
+            title={liked ? 'Unlike' : 'Like'}
+          >
+            <SolidHeart className={`w-5 h-5 ${liked ? 'text-white' : 'text-pink-500'} ${liked ? 'fill-white/80' : 'fill-pink-500/10'}`} />
+          </button>
           
           {/* Gradient Overlay for Name/Location */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white p-4">
@@ -92,11 +103,20 @@ const MatchCard = ({ profile, onInterest, onSkip }) => {
           {/* Action Buttons (3D Pop-up styles) */}
           <div className="flex gap-3 pt-3">
             <button 
-              onClick={() => onInterest(profile.id)}
+              onClick={() => {
+                const becomingConnected = connectedProfileId !== profile.id;
+                if (becomingConnected && !contact) {
+                  const rnd = Math.floor(1000 + Math.random() * 9000);
+                  const phone = `+91 98${rnd} ${Math.floor(1000 + Math.random() * 9000)}`;
+                  const email = `${name.toLowerCase().split(' ')[0] || 'user'}${rnd}@heavenmatch.example`;
+                  setContact({ phone, email });
+                }
+                if (onToggleConnect) onToggleConnect(profile.id);
+              }}
               className="flex-1 flex items-center justify-center gap-2 bg-pink-500 text-white py-2.5 rounded-xl shadow-[2px_2px_0_0_rgba(236,72,153,0.7)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-100 font-semibold text-sm"
             >
               <HeartIcon filled={true} className="w-5 h-5" /> 
-              <span className="hidden sm:inline">Connect</span>
+              <span className="hidden sm:inline">{connectedProfileId === profile.id ? 'Connected' : 'Connect'}</span>
             </button>
             <button 
               onClick={() => onSkip(profile.id)}
@@ -106,6 +126,14 @@ const MatchCard = ({ profile, onInterest, onSkip }) => {
               <span className="hidden sm:inline">Skip</span>
             </button>
           </div>
+
+          {connectedProfileId === profile.id && contact && (
+            <div className="mt-3 p-3 rounded-lg border border-gray-200 bg-gray-50 text-sm">
+              <div className="font-semibold text-gray-800 mb-1">Contact Details</div>
+              <div className="text-gray-700">Phone: <span className="font-medium">{contact.phone}</span></div>
+              <div className="text-gray-700">Email: <span className="font-medium">{contact.email}</span></div>
+            </div>
+          )}
         </div>
       </article>
     </div>

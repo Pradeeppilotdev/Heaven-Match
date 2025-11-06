@@ -12,9 +12,10 @@ export default function Recommendations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useRealData, setUseRealData] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
+  // Filters removed
   const [chatbotMode, setChatbotMode] = useState('conversation');
   const [userProfileSource, setUserProfileSource] = useState(null); // 'mock' or 'chatbot'
+  const [connectedProfileId, setConnectedProfileId] = useState(null);
 
   useEffect(() => {
     if (!showWelcome) {
@@ -61,15 +62,17 @@ export default function Recommendations() {
   const handleSkip = (id) => {
     console.log('Skipped profile:', id);
     setProfiles(profiles.filter(p => p.id !== id));
+    if (connectedProfileId === id) setConnectedProfileId(null);
   };
 
   const handleRefresh = () => {
     loadProfiles();
   };
   
-  const handleFilterClick = () => {
-    console.log('Filter button clicked. Toggling filter UI.');
-    setShowFilters(!showFilters);
+  // Filter handler removed
+
+  const handleToggleConnect = (id) => {
+    setConnectedProfileId(prev => (prev === id ? null : id));
   };
 
   const handleUseMockUser = async () => {
@@ -118,16 +121,11 @@ export default function Recommendations() {
       <PageHeader 
         onToggleDark={() => console.log('Dark mode removed')} 
         isDark={false} 
-        onFilterClick={handleFilterClick} 
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         
-        {showFilters && (
-          <div className="mb-6 p-4 rounded-xl border border-pink-300 bg-pink-50 text-pink-700 font-medium">
-            Filter Pane is Active!
-          </div>
-        )}
+        {/* Filters removed */}
         
         <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -188,6 +186,8 @@ export default function Recommendations() {
                 profile={profile}
                 onInterest={handleInterest}
                 onSkip={handleSkip}
+                connectedProfileId={connectedProfileId}
+                onToggleConnect={handleToggleConnect}
               />
             ))}
           </div>
