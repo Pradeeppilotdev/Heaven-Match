@@ -4,7 +4,7 @@ import { MOCK_PROFILES } from '../data/mockProfiles'; // 💡 NEW IMPORT
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL_NAME = "openai/gpt-oss-20b:free"; 
+const MODEL_NAME = "mistralai/mistral-7b-instruct:free"; 
 
 // Convert the mock profiles array into a string format the AI can easily read
 const PROFILES_STRING = JSON.stringify(MOCK_PROFILES);

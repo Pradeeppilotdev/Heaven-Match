@@ -18,7 +18,7 @@ const ChatMessage = ({ message }) => {
                 if (data.matches && Array.isArray(data.matches)) {
                     return (
                         <>
-                            <p>***Matchmaker Report:***</p>
+                            <p>***Heaven Match Suggestions:***</p>
                             {data.matches.map((match, index) => (
                                 <div key={index} className="match-profile-card">
                                     <h4>{match.Name} ({match.Age}) - {match.CompatibilityScore}</h4>
@@ -45,7 +45,7 @@ const ChatMessage = ({ message }) => {
     return (
         <div className={`chat-message ${isUser ? 'user' : 'bot'}`}>
             <div className="message-role">
-                {isUser ? 'You' : 'Matchmaker AI'}
+                {isUser ? 'You' : 'Heaven Match AI'}
             </div>
             <div className="message-content">
                 {renderContent(message.content)}

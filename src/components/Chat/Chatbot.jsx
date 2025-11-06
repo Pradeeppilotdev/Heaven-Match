@@ -24,7 +24,7 @@ const Chatbot = () => {
     return (
         <div className="chatbot-page">
             <div className="chatbot-header">
-                <h2>Matrimony Matchmaker AI</h2>
+                <h2>Heaven Match AI</h2>
                 <button onClick={clearChat} disabled={isLoading}>
                     Start New Chat
                 </button>
