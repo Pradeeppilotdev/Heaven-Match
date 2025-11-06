@@ -37,10 +37,27 @@ img {
 @media (max-width: 768px) {
   body {
     overflow-x: hidden;
+    width: 100%;
+    position: relative;
   }
   
+  html {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   * {
     max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Ensure all containers respect width */
+  .container {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: border-box;
   }
 }
 

@@ -152,21 +152,72 @@
     height: calc(100vh - 70px);
     background: white;
     flex-direction: column;
-    padding: 2rem 0;
+    padding: 0;
+    margin: 0;
     transition: left 0.3s ease;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     overflow-y: auto;
+    align-items: stretch;
+    list-style: none;
+    z-index: 999;
   }
 
   .nav-menu.active {
     left: 0;
   }
 
+  .nav-menu li {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .nav-menu li:first-child {
+    margin-top: 0;
+  }
+
+  .nav-menu li:last-child {
+    border-bottom: none;
+  }
+
   .nav-link {
-    width: 90%;
+    width: 100%;
     justify-content: flex-start;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     font-size: 1.1rem;
+    margin: 0;
+    border-radius: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: transparent;
+  }
+
+  .nav-link:hover {
+    background: rgba(236, 72, 153, 0.08);
+    transform: none;
+  }
+
+  .nav-link.active {
+    background: rgba(236, 72, 153, 0.12);
+    color: #ec4899;
+  }
+
+  .nav-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+    color: inherit;
+  }
+
+  .nav-link span {
+    text-align: left;
+    flex: 1;
   }
 }
 
@@ -174,6 +225,8 @@
 @media (max-width: 768px) {
   .nav-container {
     padding: 0.75rem 1rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .nav-logo {
@@ -187,11 +240,29 @@
   .nav-menu {
     top: 60px;
     height: calc(100vh - 60px);
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-menu li {
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .nav-link {
-    padding: 0.9rem 1.25rem;
+    padding: 1rem 1.25rem;
     font-size: 1rem;
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 0;
+  }
+
+  .nav-link i {
+    font-size: 1.15rem;
+    width: 22px;
+    flex-shrink: 0;
   }
 }
 
@@ -199,6 +270,8 @@
 @media (max-width: 480px) {
   .nav-container {
     padding: 0.5rem 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .nav-logo {
@@ -212,6 +285,8 @@
 
   .mobile-menu-toggle {
     padding: 0.4rem;
+    position: relative;
+    z-index: 1001;
   }
 
   .mobile-menu-toggle span {
@@ -220,18 +295,47 @@
   }
 
   .nav-menu {
-    padding: 1.5rem 0;
+    top: 55px;
+    height: calc(100vh - 55px);
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-menu li {
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .nav-link {
-    width: 95%;
-    padding: 0.85rem 1rem;
+    width: 100%;
+    padding: 1rem 1rem;
     font-size: 0.95rem;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .nav-link i {
+    font-size: 1.1rem;
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .nav-link span {
+    text-align: left;
   }
 }
 
 /* Extra small phones (320px and below) */
 @media (max-width: 320px) {
+  .nav-container {
+    padding: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .nav-logo {
     font-size: 1rem;
   }
@@ -240,9 +344,33 @@
     font-size: 1rem;
   }
 
+  .nav-menu {
+    top: 50px;
+    height: calc(100vh - 50px);
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-menu li {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   .nav-link {
-    padding: 0.75rem 0.85rem;
+    width: 100%;
+    padding: 0.9rem 0.85rem;
     font-size: 0.9rem;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .nav-link i {
+    font-size: 1rem;
+    width: 18px;
+    flex-shrink: 0;
   }
 }
 
