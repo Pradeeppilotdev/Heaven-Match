@@ -5,6 +5,30 @@ import MatchCard from "../components/MatchCard";
 //import PageHeader from "../components/PageHeader";
 import Chatbot from "../components/Chatbot";
 import WelcomeModal from "../components/WelcomeModal";
+import { SparklesIcon } from '@heroicons/react/24/outline';
+
+// Loading messages and quotes
+const loadingMessages = [
+  "We're fetching the right match for you...",
+  "A little wait for your curated matches...",
+  "Our AI is busy finding your soulmate...",
+  "Connecting the stars to find your perfect partner...",
+  "Just a moment, your future is loading...",
+  "Scanning the universe for your match...",
+  "Our cupid is working overtime for you...",
+  "Finding someone who'll make your heart skip a beat..."
+];
+
+const loadingQuotes = [
+  "Love is not about finding the right person, but creating the right relationship.",
+  "The best love is the kind that awakens the soul and makes us reach for more.",
+  "You know you're in love when you can't fall asleep because reality is finally better than your dreams.",
+  "A successful marriage requires falling in love many times, always with the same person.",
+  "Love recognizes no barriers. It jumps hurdles, leaps fences, penetrates walls to arrive at its destination full of hope.",
+  "The best thing to hold onto in life is each other.",
+  "Love is composed of a single soul inhabiting two bodies.",
+  "Being deeply loved by someone gives you strength, while loving someone deeply gives you courage."
+];
 
 export default function Recommendations() {
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -26,6 +50,32 @@ export default function Recommendations() {
   }); // 'mock' or 'chatbot'
   const [connectedProfileId, setConnectedProfileId] = useState(null);
   const [skippedProfiles, setSkippedProfiles] = useState([]);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState('');
+  const [currentLoadingQuote, setCurrentLoadingQuote] = useState('');
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [isQuoteFading, setIsQuoteFading] = useState(false);
+
+  // Rotate quotes every 5 seconds when loading with smooth fade transition
+  useEffect(() => {
+    if (!loading) return;
+    
+    const quoteInterval = setInterval(() => {
+      // Fade out current quote
+      setIsQuoteFading(true);
+      
+      // After fade-out completes, change quote and fade in
+      setTimeout(() => {
+        setQuoteIndex((prev) => {
+          const nextIndex = (prev + 1) % loadingQuotes.length;
+          setCurrentLoadingQuote(loadingQuotes[nextIndex]);
+          return nextIndex;
+        });
+        setIsQuoteFading(false);
+      }, 500); // Half of the fade animation duration
+    }, 5000);
+
+    return () => clearInterval(quoteInterval);
+  }, [loading]);
 
   useEffect(() => {
     const cached = localStorage.getItem('heavenMatch_profiles');
@@ -54,6 +104,11 @@ export default function Recommendations() {
 
     setLoading(true);
     setError(null);
+    
+    // Set random loading message and initial quote
+    setCurrentLoadingMessage(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
+    setCurrentLoadingQuote(loadingQuotes[0]);
+    setQuoteIndex(0);
 
     try {
       if (useRealData) {
@@ -219,20 +274,70 @@ export default function Recommendations() {
         )}
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg animate-pulse">
-                <div className="w-full h-72 bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="flex gap-2 pt-2">
-                    <div className="h-8 bg-gray-200 rounded-full w-1/2" />
-                    <div className="h-8 bg-gray-200 rounded-full w-1/2" />
-                  </div>
+          <div className="flex flex-col items-center justify-center min-h-[500px] py-8 doodle-bg">
+            {/* Animated Sparkles Icon - Smaller */}
+            <div className="mb-6 animate-float">
+              <div className="relative">
+                <SparklesIcon className="w-14 h-14 text-pink-500 animate-pulse" />
+                <div className="absolute inset-0 w-14 h-14 text-pink-300 animate-ping opacity-75">
+                  <SparklesIcon className="w-14 h-14" />
                 </div>
               </div>
-            ))}
+            </div>
+            
+            {/* Shimmer Loading Message - Smaller text */}
+            <h3 className="text-xl sm:text-2xl font-bold mb-6 shimmer-text text-center px-4">
+              {currentLoadingMessage || "We're fetching the right match for you..."}
+            </h3>
+            
+            {/* Quote Section - Doodle themed with rotating quotes */}
+            <div className="max-w-xl mx-auto mt-6 px-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border-2 border-pink-200 shadow-lg relative overflow-hidden">
+                {/* Doodle decoration elements */}
+                <div className="absolute top-2 right-2 w-8 h-8 text-pink-300 opacity-50">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                  </svg>
+                </div>
+                <div className="absolute bottom-2 left-2 w-6 h-6 text-pink-300 opacity-50">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                
+                <div className="flex items-start gap-3 relative z-10">
+                  <div className="text-pink-500 text-2xl font-serif leading-none">"</div>
+                  <p className={`text-sm sm:text-base text-gray-700 italic leading-relaxed flex-1 ${isQuoteFading ? 'animate-fade-out' : 'animate-fade-in'}`}>
+                    {currentLoadingQuote || loadingQuotes[0]}
+                  </p>
+                  <div className="text-pink-500 text-2xl font-serif leading-none">"</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Loading Dots - Smaller */}
+            <div className="flex gap-2 mt-6">
+              <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            
+            {/* Skeleton Cards Preview - Smaller and more subtle */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 w-full opacity-20">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white border border-pink-200 rounded-xl overflow-hidden shadow-md animate-pulse">
+                  <div className="w-full h-56 bg-gradient-to-br from-pink-100 to-pink-200" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 bg-pink-100 rounded w-3/4" />
+                    <div className="h-2 bg-pink-100 rounded w-1/2" />
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-6 bg-pink-100 rounded-full w-1/2" />
+                      <div className="h-6 bg-pink-100 rounded-full w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>

@@ -87,17 +87,29 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
             {bio || 'No bio provided.'}
           </p>
 
-          {/* Interests - Allow wrapping, no clipping, increased padding */}
-          <div className="flex flex-wrap gap-2 min-h-[3.5rem]">
-            {(interests || []).slice(0, 5).map((hobby, idx) => (
-              <span 
-                key={idx}
-                className="text-xs px-3 py-1.5 rounded-full bg-pink-100 text-pink-700 font-medium whitespace-nowrap"
-                title={hobby}
-              >
-                {hobby}
-              </span>
-            ))}
+          {/* Interests - Fixed height to prevent 3rd line, max 2 lines */}
+          <div className="flex flex-wrap gap-2 h-[3.5rem] overflow-hidden content-start">
+            {(interests || []).slice(0, 5).map((hobby, idx) => {
+              // Dynamic font size based on hobby name length - more aggressive for longer tags
+              const getFontSize = (text) => {
+                const length = text.length;
+                if (length <= 8) return 'text-xs'; // 12px - very short tags
+                if (length <= 12) return 'text-[0.7rem]'; // 11.2px - short tags
+                if (length <= 18) return 'text-[0.65rem]'; // 10.4px - medium tags
+                if (length <= 25) return 'text-[0.6rem]'; // 9.6px - long tags
+                return 'text-[0.55rem]'; // 8.8px - very long tags
+              };
+              
+              return (
+                <span 
+                  key={idx}
+                  className={`${getFontSize(hobby)} px-2.5 py-1 rounded-full bg-pink-100 text-pink-700 font-medium whitespace-nowrap`}
+                  title={hobby}
+                >
+                  {hobby}
+                </span>
+              );
+            })}
           </div>
 
           {/* Action Buttons (3D Pop-up styles) */}
