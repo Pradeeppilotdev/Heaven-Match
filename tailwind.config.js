@@ -1,28 +1,26 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html"
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      colors: {
-        pink: {
-          50: '#fce7f3',
-          100: '#fce7f3',
-          200: '#fbcfe8',
-          300: '#f9a8d4',
-          400: '#f472b6',
-          500: '#ec4899',
-          600: '#db2777',
-          700: '#be185d',
-          800: '#9d174d',
-          900: '#831843',
-        }
+      // Add these animations
+      keyframes: {
+        fadeIn: {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' },
+        },
+        slideInUp: {
+          'from': { opacity: '0', transform: 'translateY(20px) scale(0.95)' },
+          'to': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      }
+        fadeIn: 'fadeIn 0.3s ease-out',
+        slideInUp: 'slideInUp 0.3s ease-out',
+      },
     },
   },
   plugins: [],

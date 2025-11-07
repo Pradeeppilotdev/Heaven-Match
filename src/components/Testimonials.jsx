@@ -85,8 +85,7 @@ export const Testimonials = () => {
         setLoading(true);
         setError(null);
 
-        const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
-
+        const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
         // Configuration check with local fallback
         if (!apiKey) {
             const local = Array.from({ length: TOTAL_DISPLAYED }).map((_, i) => ({

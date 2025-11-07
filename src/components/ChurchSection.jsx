@@ -1,175 +1,270 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, MapPin, Heart } from 'lucide-react';
 
-// --- Data for different religious traditions with image URLs ---
-const RELIGIONS = [
-  {
-    name: 'Hindu Dharma',
-    // Using a placeholder image URL for Mandap theme
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF4XyF2EIUEbeNIgs6CwanDvags6oX0qtVig&s',
-    color: 'orange',
-    title: 'The Pavitra Bandhan (Sacred Bond)',
-    description: "The journey begins with Dharma (righteous duty). We honor the sanctity of traditional Hindu unions, ensuring alignment not just between individuals, but between their families and values.",
-    features: ['Matchmaking based on shared Dharma', 'Family and cultural alignment prioritized', 'Solemnizing vows under the Mandap'],
+// --- Data for all communities ---
+const communities = {
+  dharmic: {
+    name: 'Dharmic',
+    description: 'Find matches who share your Dharmic values and traditions.',
+    color: 'from-orange-950 to-gray-900',
+    buttonColor: 'bg-orange-600',
+    buttonHover: 'hover:bg-orange-500',
+    profiles: [
+      { id: 'd1', name: 'Rohan & Priya', age: 'Matched!', location: 'Mumbai', tag: 'Shared Values', imageUrl: 'https://images.unsplash.com/photo-1588325697552-c603b3a4e8d3?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'd2', name: 'Aditya K.', age: 31, location: 'Delhi', tag: 'Family Oriented', imageUrl: 'https://images.unsplash.com/photo-1620781745244-93e038209848?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'd3', name: 'Meera V.', age: 28, location: 'Bangalore', tag: 'Spiritual', imageUrl: 'https://images.unsplash.com/photo-1615162232344-bf8366c359fd?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+    ]
   },
-  {
-    name: 'Christianity',
-    // Using a placeholder image URL for Church theme
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT1W92K9QESiB7dZiPw7edSBYq64A1Ftrk74w&s',
-    color: 'blue',
-    title: 'The Holy Covenant of Eternal Love',
-    description: "Marriage is a sacred covenant. We help you find a partner dedicated to building a home founded on faith, mutual respect, and the promise of everlasting companionship.",
-    features: ['Partners committed to shared faith', 'Community and church alignment', 'Building a foundation of Christian values'],
+  christian: {
+    name: 'Christian',
+    description: 'Connect with singles who share your Christian faith and values.',
+    color: 'from-rose-950 to-gray-900',
+    buttonColor: 'bg-rose-600',
+    buttonHover: 'hover:bg-rose-500',
+    profiles: [
+      { id: 'c1', name: 'David & Hannah', age: 'Matched!', location: 'Chennai', tag: 'Faith Focused', imageUrl: 'https://images.unsplash.com/photo-1604513318280-c20d7560b4c2?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'c2', name: 'Sarah J.', age: 29, location: 'Goa', tag: 'Community First', imageUrl: 'https://images.unsplash.com/photo-1594819047125-a71c1f7b5a5c?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'c3', name: 'Michael R.', age: 33, location: 'Kochi', tag: 'Kind & Devout', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+    ]
   },
-  {
-    name: 'Islam',
-    // Using a placeholder image URL for Nikaah theme
-    imageUrl: 'https://www.brides.com/thmb/NeCEaD8cpw9yi5GMPD0ApHh4xWw=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/nikah-wedding-getty-images-08308e0e82d14cf2895235cf3da993c3.jpg',
-    color: 'green',
-    title: 'The Solemn Contract of Nikaah',
-    description: "We respect the sanctity of Nikaah, the solemn contract between a man and a woman. Our matches prioritize piety, shared spiritual goals, and family consensus.",
-    features: ['Focus on spiritual compatibility', 'Respect for Sharia and Islamic law', 'Facilitating contact with Wali (guardian)'],
+  muslim: {
+    name: 'Muslim',
+    description: 'Discover partners who walk a shared path of faith and culture.',
+    color: 'from-green-950 to-gray-900',
+    buttonColor: 'bg-green-600',
+    buttonHover: 'hover:bg-green-500',
+    profiles: [
+      { id: 'm1', name: 'Amir & Fatima', age: 'Matched!', location: 'Hyderabad', tag: 'Shared Beliefs', imageUrl: 'https://images.unsplash.com/photo-1577036431183-17638c6f2b54?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'm2', name: 'Yusuf A.', age: 30, location: 'Lucknow', tag: 'Family & Faith', imageUrl: 'https://images.unsplash.com/photo-1581803118522-7b72a50f7e9f?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'm3', name: 'Aisha K.', age: 27, location: 'Srinagar', tag: 'Devout & Modern', imageUrl: 'https://images.unsplash.com/photo-1562908261-56d30800b624?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+    ]
   },
-  {
-    name: 'Sikhism',
-    // Using a placeholder image URL for Anand Karaj theme
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZlIhtfYfxFVX1fDVHPKVTH1I_bYfrfvDgbw&s',
-    color: 'yellow',
-    title: 'Anand Karaj (Blissful Union)',
-    description: "The Anand Karaj is a ceremony of bliss. We connect souls seeking a partnership rooted in service (Seva), equality, and devotion to the Guru Granth Sahib.",
-    features: ['Partners dedicated to Seva and equality', 'Respect for Anand Karaj traditions', 'Matches based on shared Punjabi heritage'],
+  sikh: {
+    name: 'Sikh',
+    description: 'Find a life partner within the Sikh community, based on shared values.',
+    color: 'from-blue-950 to-gray-900',
+    buttonColor: 'bg-blue-600',
+    buttonHover: 'hover:bg-blue-500',
+    profiles: [
+      { id: 's1', name: 'Jaspreet & Harleen', age: 'Matched!', location: 'Amritsar', tag: 'Waheguru\'s Grace', imageUrl: 'https://images.unsplash.com/photo-1599507117830-29179d664b67?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 's2', name: 'Manpreet S.', age: 32, location: 'Chandigarh', tag: 'Seva & Family', imageUrl: 'https://images.unsplash.com/photo-1559905206-ce6d5d59f33f?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 's3', name: 'Simran K.', age: 29, location: 'Jalandhar', tag: 'Kind Heart', imageUrl: 'https://images.unsplash.com/photo-1631557007575-4c6d8608f65e?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+    ]
   },
-];
+  jain: {
+    name: 'Jain',
+    description: 'Connect with individuals who embrace the principles of non-violence and compassion.',
+    color: 'from-purple-950 to-gray-900',
+    buttonColor: 'bg-purple-600',
+    buttonHover: 'hover:bg-purple-500',
+    profiles: [
+      { id: 'j1', name: 'Parth & Riya', age: 'Matched!', location: 'Ahmedabad', tag: 'Peaceful Union', imageUrl: 'https://images.unsplash.com/photo-1542025790-a511e3c5b886?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'j2', name: 'Siddharth J.', age: 34, location: 'Jaipur', tag: 'Mindful Living', imageUrl: 'https://images.unsplash.com/photo-1617215396501-b6578a993e87?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'j3', name: 'Aditi S.', age: 28, location: 'Surat', tag: 'Compassionate', imageUrl: 'https://images.unsplash.com/photo-1613217822692-a7d4e7a88506?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+    ]
+  }
+};
+// Get an ordered array of the community keys
+const communityKeys = Object.keys(communities);
 
 /**
- * Renders a carded carousel showcasing the platform's commitment to supporting 
- * traditional and religious values across multiple faiths.
+ * A reusable card for the phasing carousel.
  */
-const MandapSection = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const currentReligion = RELIGIONS[currentIndex];
+const ProfileCard = ({ profile, index, accentColor }) => (
+  <div className="w-72 h-96 flex-shrink-0 rounded-2xl overflow-hidden shadow-xl">
+    <img
+      src={profile.imageUrl}
+      alt={profile.name}
+      className="w-full h-full object-cover"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+    <div className="absolute bottom-0 left-0 p-5 text-white">
+      <div 
+        className={`inline-block px-3 py-1 text-sm rounded-full mb-2 ${
+          profile.age === 'Matched!' ? 'bg-pink-500' : `${accentColor}/80 backdrop-blur-sm`
+        }`}
+      >
+        <div className="flex items-center gap-1.5">
+          <Heart className="w-4 h-4" />
+          <span>{profile.tag}</span>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold">{profile.name}</h3>
+      <div className="flex items-center gap-4 text-gray-200">
+        <div className="flex items-center gap-1.5">
+          <User className="w-4 h-4" />
+          <span>{profile.age}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-4 h-4" />
+          <span>{profile.location}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % RELIGIONS.length);
+/**
+ * The new dynamic "Community Section" component.
+ */
+export const CommunitySection = ()=> {
+  const [selectedCommunityIndex, setSelectedCommunityIndex] = useState(0);
+  const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
+
+  const selectedKey = communityKeys[selectedCommunityIndex];
+  const currentCommunity = communities[selectedKey];
+  const currentProfiles = currentCommunity.profiles;
+  const totalProfiles = currentProfiles.length;
+  const totalCommunities = communityKeys.length;
+
+  const selectNextCommunity = () => {
+    const nextIndex = (selectedCommunityIndex + 1) % totalCommunities;
+    setSelectedCommunityIndex(nextIndex);
+    setCurrentProfileIndex(0); 
   };
 
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + RELIGIONS.length) % RELIGIONS.length);
+  const selectPrevCommunity = () => {
+    const prevIndex = (selectedCommunityIndex - 1 + totalCommunities) % totalCommunities;
+    setSelectedCommunityIndex(prevIndex);
+    setCurrentProfileIndex(0); 
   };
 
-  // Utility classes for dynamic colors
-  const bgColor = `bg-${currentReligion.color}-50`;
-  const iconColor = `text-${currentReligion.color}-600`;
-  const featureBg = `bg-${currentReligion.color}-100`;
+  const nextProfile = () => {
+    setCurrentProfileIndex((prevIndex) => (prevIndex + 1) % totalProfiles);
+  };
+
+  const prevProfile = () => {
+    setCurrentProfileIndex((prevIndex) => (prevIndex - 1 + totalProfiles) % totalProfiles);
+  };
 
   return (
-    <section className="py-20 bg-gray-50 relative overflow-hidden font-sans">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-4">
-            A Partnership Rooted in Faith, Honoring All Traditions
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Our commitment goes beyond compatibility—we match you with partners who share your deepest spiritual and cultural foundations, regardless of denomination.
-          </p>
+    <section 
+      className={`py-24 bg-gradient-to-b ${currentCommunity.color} text-white relative overflow-hidden transition-all duration-700 ease-in-out`}
+    >
+      <div className="container mx-auto px-4 relative z-10">
+        
+        {/* * FIX 1: Increased height from h-28 to h-32 to prevent text overlap.
+          * Increased margin-bottom from mb-12 to mb-16 to give space.
+        */}
+        <div className="text-center max-w-2xl mx-auto mb-16 relative h-32">
+          {communityKeys.map((key, index) => (
+            <div
+              key={key}
+              className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+                selectedCommunityIndex === index
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-5 pointer-events-none'
+              }`}
+            >
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                Find Your Match in the {communities[key].name} Community
+              </h2>
+              <p className="mt-4 text-lg text-gray-200 opacity-80">
+                {communities[key].description}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Carousel Container */}
-        <div className="relative">
-          {/* Card View */}
-          <div 
-            className={`transition-all duration-700 ease-in-out p-6 md:p-12 rounded-3xl shadow-2xl ${bgColor} border-4 border-${currentReligion.color}-200`}
+        <div 
+          className={`relative max-w-md mx-auto mb-16 flex items-center justify-between p-4 rounded-lg shadow-lg bg-white/10 backdrop-blur-sm transition-all duration-300 ${currentCommunity.buttonColor}`}
+        >
+          <button
+            onClick={selectPrevCommunity}
+            className={`p-2 rounded-full text-white/70 ${currentCommunity.buttonHover} transition-colors`}
+            aria-label="Previous community"
           >
-            <div className="grid md:grid-cols-12 gap-8 items-center">
-              
-              {/* Image/Symbol Column (Left) */}
-              <div className="md:col-span-4 flex flex-col items-center justify-start text-center bg-white rounded-xl shadow-lg overflow-hidden h-full">
-                {/* 👇 Swapped emoji for image */}
-                <img
-                  src={currentReligion.imageUrl}
-                  alt={`${currentReligion.name} ceremony representation`}
-                  className="w-full h-auto object-cover transition-transform duration-500 transform hover:scale-105"
-                  // Fallback for image loading error
-                  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/300x200/CCCCCC/000000?text=Image+Error"; }}
-                />
-                <div className="p-4 w-full">
-                  <h3 className={`text-2xl font-bold ${iconColor}`}>{currentReligion.name}</h3>
-                </div>
-              </div>
-              
-              {/* Content Column (Right) */}
-              <div className="md:col-span-8 space-y-6">
-                
-                {/* Feature Callout / Badge */}
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${featureBg} ${iconColor} self-start`}>
-                  <Heart className="w-4 h-4 fill-current" />
-                  <span className="font-semibold">{currentReligion.title}</span>
-                </div>
-                
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {currentReligion.name}: {currentReligion.title}
-                </h2>
-                
-                <p className="text-gray-700 text-lg">
-                  {currentReligion.description}
-                </p>
-                
-                {/* Key Feature List */}
-                <div className="space-y-3">
-                  {currentReligion.features.map((text, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className={`w-6 h-6 rounded-full ${featureBg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <div className={`w-2 h-2 rounded-full ${iconColor} bg-current`}></div>
-                      </div>
-                      <p className="text-gray-700">{text}</p>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Call to Action Button */}
-                <button 
-                  className={`mt-6 w-full sm:w-auto px-8 py-3 text-lg font-semibold rounded-lg bg-pink-600 text-white shadow-xl hover:bg-pink-700 transition duration-300 transform hover:-translate-y-0.5`}
-                >
-                  Find Matches in {currentReligion.name}
-                </button>
-              </div>
-            </div>
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          
+          {/* * FIX 3: Removed fixed 'w-32' and added 'px-8' for padding.
+          */}
+          <div className="relative h-6 w-32 text-center overflow-hidden">
+            {communityKeys.map((key, index) => (
+              <span
+                key={key}
+                className={`absolute inset-0 text-xl font-bold transition-all duration-300 ease-in-out ${
+                  selectedCommunityIndex === index
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-4 pointer-events-none'
+                }`}
+              >
+                {communities[key].name}
+              </span>
+            ))}
           </div>
 
-          {/* Navigation Arrows */}
-          <button 
-            onClick={handlePrev}
-            className="absolute top-1/2 left-0 md:-left-12 transform -translate-y-1/2 p-3 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors z-10"
-            aria-label="Previous Tradition"
+          <button
+            onClick={selectNextCommunity}
+            className={`p-2 rounded-full text-white/70 ${currentCommunity.buttonHover} transition-colors`}
+            aria-label="Next community"
           >
-            <ChevronLeft className="w-6 h-6 text-gray-700" />
-          </button>
-          <button 
-            onClick={handleNext}
-            className="absolute top-1/2 right-0 md:-right-12 transform -translate-y-1/2 p-3 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors z-10"
-            aria-label="Next Tradition"
-          >
-            <ChevronRight className="w-6 h-6 text-gray-700" />
+            <ChevronRight className="w-6 h-6" />
           </button>
         </div>
+
+        {/* 3. Phasing Profile Carousel & Side Navigation Wrapper */}
+        <div className="relative w-full max-w-5xl mx-auto flex items-center justify-center">
         
-        {/* Navigation Dots */}
-        <div className="flex justify-center mt-8 space-x-2">
-          {RELIGIONS.map((_, index) => (
+          <button
+            onClick={prevProfile}
+            className={`absolute left-0 z-30 p-3 rounded-full ${currentCommunity.buttonColor}/50 backdrop-blur-sm text-white ${currentCommunity.buttonHover} transition-colors -translate-x-4 md:-translate-x-12`}
+            aria-label="Previous profile"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <div className="relative h-[450px] w-full max-w-4xl mx-auto flex items-center justify-center [perspective:1000px]">
+            {currentProfiles.map((profile, index) => {
+              const delta = index - currentProfileIndex;
+              const absDelta = Math.abs(delta);
+              
+              const transform = `
+                translateX(${delta * 40}%) 
+                scale(${1 - absDelta * 0.1}) 
+                rotateY(${-delta * 10}deg)
+              `;
+              const opacity = absDelta > 1 ? 0 : (absDelta === 1 ? 0.6 : 1);
+              const zIndex = totalProfiles - absDelta;
+
+              return (
+                <div
+                  key={profile.id}
+                  className="absolute transition-all duration-500 ease-in-out"
+                  style={{ transform, opacity, zIndex }}
+                >
+                  <ProfileCard profile={profile} index={index} accentColor={currentCommunity.buttonColor} />
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={nextProfile}
+            className={`absolute right-0 z-30 p-3 rounded-full ${currentCommunity.buttonColor}/50 backdrop-blur-sm text-white ${currentCommunity.buttonHover} transition-colors translate-x-4 md:translate-x-12`}
+            aria-label="Next profile"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* 4. Bottom Dot Indicators for Profile Carousel */}
+        <div className="flex justify-center items-center gap-2 mt-8">
+          {currentProfiles.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                currentIndex === index ? 'bg-pink-600 w-8' : 'bg-gray-300 hover:bg-gray-400'
+              onClick={() => setCurrentProfileIndex(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentProfileIndex === index ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/50'
               }`}
-              aria-label={`Go to ${RELIGIONS[index].name}`}
+              aria-label={`Go to profile ${index + 1}`}
             />
           ))}
         </div>
+
       </div>
     </section>
   );
 };
 
-export default MandapSection;
+export default CommunitySection;

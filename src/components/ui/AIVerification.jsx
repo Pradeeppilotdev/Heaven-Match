@@ -49,8 +49,7 @@ export const AIVerificationDemo = () => {
     setError(null);
     setVerification(null);
 
-    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
-
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
     // Critical API Key Validation with local fallback
     if (!apiKey) {
       const profileLabel = profiles.find(p => p.value === selectedProfile)?.label;
@@ -257,3 +256,5 @@ Make checks sound professional and security-focused.`;
     </Card>
   );
 };
+
+export default AIVerificationDemo;

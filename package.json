@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@google/genai": "^1.29.0",
+    "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.13.2",
     "lucide-react": "^0.263.1",
