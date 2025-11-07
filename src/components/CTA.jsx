@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
-import ChurchArch from './ui/ChurchArch';
+import ChurchArch from './UI/ChurchArch';
 import { RegisterModal } from './AuthModals';
 
 /**

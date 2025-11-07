@@ -33,11 +33,16 @@ export const AICoachDemo = () => {
     setError(null);
     setAdvice('');
 
-    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
 
-    // Critical configuration check.
-    if (!apiKey || apiKey === "REACT_APP_GEMINI_API_KEY") {
-      setError("API key is not configured.");
+    // Critical configuration check with local fallback
+    if (!apiKey) {
+      const local = [
+        'Plan a mini-date this week that fits both your schedules.',
+        'Share one appreciation daily; small acknowledgments build closeness.',
+        'Set clear expectations before sensitive talks; agree on a time and tone.'
+      ];
+      setAdvice(local);
       setLoading(false);
       return;
     }

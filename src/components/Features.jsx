@@ -4,12 +4,12 @@ import React from 'react';
 // Import necessary icons from lucide-react.
 import {Lock, Users} from 'lucide-react'; 
 // Import the generic Card component for consistent UI wrapping.
-import Card from './ui/Card';
+import Card from './UI/Card';
 // Import the individual AI demo components.
-import { AIIcebreakerDemo } from './ui/AIIceBreakerDemo';
-import { AICoachDemo } from './ui/AIPersonalCoach';
-import { DeepCompatibilityDemo } from './ui/DeepCompatibiltyDemo';
-import { AIVerificationDemo } from './ui/AIVerification';
+import { AIIcebreakerDemo } from './UI/AIIceBreakerDemo';
+import { AICoachDemo } from './UI/AIPersonalCoach';
+import { DeepCompatibilityDemo } from './UI/DeepCompatibiltyDemo';
+import { AIVerificationDemo } from './UI/AIVerification';
 
 /**
  * Renders the main Features section, showcasing both interactive AI demos and static feature descriptions.

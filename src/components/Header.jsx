@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Button from './ui/Button'; 
+import { Link, useLocation } from 'react-router-dom';
+import Button from './UI/Button'; 
 
 /**
  * Renders the sticky application header. Features dynamic styling on scroll and responsive navigation.
  */
 export const Header = () => {
+  const location = useLocation();
   // State for toggling the mobile navigation menu visibility.
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // State to track if the page has been scrolled past a threshold.
@@ -47,10 +48,10 @@ export const Header = () => {
               <Link
                 key={item.to}
                 to={item.to}
-                className="text-gray-700 hover:text-pink-600 transition-colors font-medium relative group"
+                className={`text-gray-700 hover:text-pink-600 transition-colors font-medium relative group ${location.pathname === item.to ? 'text-pink-600' : ''}`}
               >
                 {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-pink-600 transition-all group-hover:w-full"></span>
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-pink-600 transition-all ${location.pathname === item.to ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
             ))}
           </nav>

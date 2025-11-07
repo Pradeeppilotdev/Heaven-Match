@@ -7,23 +7,51 @@ import Chatbot from "../components/Chatbot";
 import WelcomeModal from "../components/WelcomeModal";
 
 export default function Recommendations() {
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [profiles, setProfiles] = useState([]);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    const cached = localStorage.getItem('heavenMatch_userSelection');
+    return !cached;
+  });
+  const [profiles, setProfiles] = useState(() => {
+    const cached = localStorage.getItem('heavenMatch_profiles');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useRealData, setUseRealData] = useState(true);
   // Filters removed
   const [chatbotMode, setChatbotMode] = useState('conversation');
-  const [userProfileSource, setUserProfileSource] = useState(null); // 'mock' or 'chatbot'
+  const [userProfileSource, setUserProfileSource] = useState(() => {
+    const cached = localStorage.getItem('heavenMatch_userSelection');
+    return cached || null;
+  }); // 'mock' or 'chatbot'
   const [connectedProfileId, setConnectedProfileId] = useState(null);
+  const [skippedProfiles, setSkippedProfiles] = useState([]);
 
   useEffect(() => {
+    const cached = localStorage.getItem('heavenMatch_profiles');
+    if (cached && JSON.parse(cached).length > 0 && !showWelcome) {
+      return; // Use cached data
+    }
     if (!showWelcome) {
       loadProfiles();
     }
   }, [useRealData, showWelcome]);
 
-  const loadProfiles = async () => {
+  const loadProfiles = async (forceRefresh = false) => {
+    // Check cache first unless force refresh
+    if (!forceRefresh) {
+      const cached = localStorage.getItem('heavenMatch_profiles');
+      const cacheTime = localStorage.getItem('heavenMatch_profiles_time');
+      if (cached && cacheTime) {
+        const age = Date.now() - parseInt(cacheTime, 10);
+        // Use cache if less than 5 minutes old
+        if (age < 5 * 60 * 1000) {
+          setProfiles(JSON.parse(cached));
+          return;
+        }
+      }
+    }
+
     setLoading(true);
     setError(null);
 
@@ -37,6 +65,8 @@ export default function Recommendations() {
         
         if (data.length > 0) {
           setProfiles(data);
+          localStorage.setItem('heavenMatch_profiles', JSON.stringify(data));
+          localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
           setError(null);
         } else {
           throw new Error('No profiles returned from AI pipeline');
@@ -44,6 +74,8 @@ export default function Recommendations() {
       } else {
         console.log('Using mock profiles (non-AI)');
         setProfiles(mockProfiles);
+        localStorage.setItem('heavenMatch_profiles', JSON.stringify(mockProfiles));
+        localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -61,12 +93,14 @@ export default function Recommendations() {
 
   const handleSkip = (id) => {
     console.log('Skipped profile:', id);
+    const skipped = profiles.find(p => p.id === id);
     setProfiles(profiles.filter(p => p.id !== id));
+    if (skipped) setSkippedProfiles(prev => [skipped, ...prev].slice(0, 10));
     if (connectedProfileId === id) setConnectedProfileId(null);
   };
 
   const handleRefresh = () => {
-    loadProfiles();
+    loadProfiles(true); // Force refresh
   };
   
   // Filter handler removed
@@ -78,22 +112,41 @@ export default function Recommendations() {
   const handleUseMockUser = async () => {
     setShowWelcome(false);
     setUserProfileSource('mock');
+    localStorage.setItem('heavenMatch_userSelection', 'mock');
     setChatbotMode('conversation');
     setLoading(true);
     setUseRealData(true);
-    await loadProfiles();
+    await loadProfiles(true);
   };
 
   const handleStartChatbot = () => {
     setShowWelcome(false);
     setUserProfileSource('chatbot');
+    localStorage.setItem('heavenMatch_userSelection', 'chatbot');
     setChatbotMode('questionnaire');
     // Chatbot will handle the questionnaire flow
+  };
+
+  const handleCloseModal = () => {
+    setShowWelcome(false);
+    if (!userProfileSource) {
+      // Default to mock user if closed without selection
+      setUserProfileSource('mock');
+      localStorage.setItem('heavenMatch_userSelection', 'mock');
+      setUseRealData(true);
+      loadProfiles(true);
+    }
+  };
+
+  const handleChangeSelection = () => {
+    setShowWelcome(true);
   };
 
   const handleQuestionnaireComplete = async (userData, recommendations) => {
     // Update profiles with chatbot recommendations
     setProfiles(recommendations);
+    localStorage.setItem('heavenMatch_profiles', JSON.stringify(recommendations));
+    localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
     setLoading(false);
     setChatbotMode('conversation'); // Switch back to conversation mode after completion
   };
@@ -110,14 +163,6 @@ export default function Recommendations() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors duration-300 doodle-bg">
-      {showWelcome && (
-        <WelcomeModal
-          onUseMockUser={handleUseMockUser}
-          onStartChatbot={handleStartChatbot}
-          onClose={() => setShowWelcome(false)}
-        />
-      )}
-      
       {/* <PageHeader 
         onToggleDark={() => console.log('Dark mode removed')} 
         isDark={false} 
@@ -130,10 +175,10 @@ export default function Recommendations() {
         <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-              AI-Curated Matches
+              {userProfileSource ? 'Your Best Matches' : 'Discover Your Matches'}
             </h2>
             <p className="text-sm text-gray-600">
-              {profiles.length} enriched profiles matching your preferences
+              {profiles.length > 0 ? `${profiles.length} enriched profiles matching your preferences` : 'Choose how you\'d like to find your perfect match'}
             </p>
           </div>
 
@@ -143,17 +188,28 @@ export default function Recommendations() {
               disabled={loading}
               className={`${buttonBaseClass} hover:${buttonHoverClass} disabled:opacity-50`}
             >
-              {loading ? 'Loading...' : 'Refresh'}
+              {loading ? 'Finding matches...' : 'Refresh'}
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
-            <button
-              onClick={() => setUseRealData(!useRealData)}
-              className={`${buttonBaseClass} hover:${buttonHoverClass}`}
-            >
-              {useRealData ? 'Use Mock Data' : 'Use Real Data'}
-            </button>
+            {userProfileSource && (
+              <button
+                onClick={handleChangeSelection}
+                className={`${buttonBaseClass} hover:${buttonHoverClass}`}
+              >
+                Change Selection
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" /></svg>
+              </button>
+            )}
           </div>
         </div>
+
+        {showWelcome && (
+          <WelcomeModal
+            onUseMockUser={handleUseMockUser}
+            onStartChatbot={handleStartChatbot}
+            onClose={handleCloseModal}
+          />
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-700 flex items-center gap-2 font-medium">
@@ -163,7 +219,7 @@ export default function Recommendations() {
         )}
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg animate-pulse">
                 <div className="w-full h-72 bg-gray-200" />
@@ -179,18 +235,38 @@ export default function Recommendations() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {profiles.map((profile) => (
-              <MatchCard 
-                key={profile.id} 
-                profile={profile}
-                onInterest={handleInterest}
-                onSkip={handleSkip}
-                connectedProfileId={connectedProfileId}
-                onToggleConnect={handleToggleConnect}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {profiles.map((profile) => (
+                <MatchCard 
+                  key={profile.id} 
+                  profile={profile}
+                  onInterest={handleInterest}
+                  onSkip={handleSkip}
+                  connectedProfileId={connectedProfileId}
+                  onToggleConnect={handleToggleConnect}
+                />
+              ))}
+            </div>
+            {skippedProfiles.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Skipped profiles</h3>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {skippedProfiles.map(sp => (
+                    <div key={sp.id} className="min-w-[220px] bg-white border border-gray-200 rounded-xl shadow p-3">
+                      <div className="flex items-center gap-3">
+                        <img src={sp.image} alt={sp.name} className="w-14 h-14 rounded-lg object-cover" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{sp.name}, {sp.age}</div>
+                          <div className="text-xs text-gray-500 truncate">{sp.location}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {!loading && profiles.length === 0 && (

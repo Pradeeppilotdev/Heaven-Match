@@ -54,7 +54,7 @@ export const fetchProfiles = async (count = 8, userProfile = null) => {
     const candidates = staticCandidates.map(p => ({
         ...p,
         // Add a placeholder image URL for all profiles
-        image: p.image || `https://picsum.photos/seed/${p.id}/300/400`, 
+        image: p.image || `https://picsum.photos/seed/${p.id}/600/800`, 
         // Use hobbies directly (sports are now merged into hobbies)
         interests: (p.hobbies || []).slice(0, 5), // Ensure exactly 5 hobbies
         bio: p.bio_text,

@@ -44,7 +44,7 @@ export const getChatbotResponse = async (history, newMessage) => {
     return response.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Sorry, I'm having trouble connecting to the AI right now. Please check your API key or try again later.";
+    return "Sorry, I'm having trouble connecting to the AI right now.";
   }
 };
 

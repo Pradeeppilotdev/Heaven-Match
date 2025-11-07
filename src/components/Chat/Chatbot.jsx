@@ -4,7 +4,7 @@ import { useChat } from '../../hooks/useChat';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatSuggestions from './ChatSuggestions';
-import Spinner from '../ui/Spinner';
+import Spinner from '../UI/Spinner';
 import '../../styles/Chat.css'; // Import CSS
 
 // function to integrate all the other pages
