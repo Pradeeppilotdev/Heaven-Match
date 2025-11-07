@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Heaven Match — Login</title>
+<style>
+  :root{
+    --pink:#ff4d8b;
+    --pink-soft:#ffe7f2;
+    --box-bg: #ffffff;
+    --muted:#7b7b7b;
+    --overlay: rgba(0,0,0,0.55);
+    --radius:10px;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:#111;}
+  /* blurred background area (demo hero) */
+  .hero{
+    position:fixed;inset:0;background:
+    url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1600&q=60')
+    center/cover no-repeat;filter:blur(3px) brightness(0.55);
+  }
+
+  /* overlay */
+  .overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--overlay);
+    padding:20px;box-sizing:border-box;
+  }
+
+  /* modal box */
+  .modal{
+    width:100%;max-width:520px;background:var(--box-bg);border-radius:var(--radius);box-shadow:0 18px 40px rgba(0,0,0,0.5);
+    padding:26px 28px;box-sizing:border-box;position:relative;
+  }
+
+  /* close cross */
+  .close{
+    position:absolute;right:12px;top:12px;width:28px;height:28px;border-radius:6px;border:none;background:#f3f3f3;cursor:pointer;
+  }
+
+  /* logo */
+  .logo{
+    width:64px;height:64px;border-radius:10px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin:0 auto 12px;font-size:20px;
+  }
+
+  .title{text-align:center;margin:0 0 6px;font-size:20px;color:#222;font-weight:600;}
+  .sub{ text-align:center;color:var(--muted);font-size:13px;margin-bottom:14px;}
+
+  /* tabs */
+  .tabs{display:flex;justify-content:center;border-bottom:1px solid #f0f0f0;padding-bottom:8px;margin-bottom:14px;}
+  .tab-btn{border:none;background:transparent;padding:10px 18px;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;}
+  .tab-btn.active{color:var(--pink);border-color:var(--pink);font-weight:600;}
+
+  /* form */
+  label{display:block;color:#555;font-size:13px;margin-bottom:6px;}
+  input[type="text"], input[type="password"], input[type="tel"]{
+    width:100%;padding:10px 12px;border:1px solid #e6e6e6;border-radius:8px;font-size:14px;box-sizing:border-box;
+  }
+
+  .row{margin-bottom:12px;}
+  .small{font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+
+  .pink-btn{
+    display:block;width:100%;background:linear-gradient(180deg,var(--pink) 0,#ff2f78 100%);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px;
+    box-shadow: 0 8px 18px rgba(255,77,139,0.18);
+  }
+  .ghost-btn{
+    display:block;width:100%;background:var(--pink-soft);color:var(--pink);border:1px solid #ffd4ea;padding:12px;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px;
+  }
+
+  .or-line{display:flex;align-items:center;margin:14px 0;color:#cfcfcf;font-size:13px}
+  .or-line::before,.or-line::after{content:"";flex:1;height:1px;background:#eee;margin:0 10px}
+
+  .footer{ text-align:center;margin-top:12px;font-size:13px;color:var(--muted); }
+  .link{color:var(--pink);text-decoration:none;font-weight:600; }
+
+  /* OTP small layout */
+  .otp-grid{display:flex;gap:8px}
+  .otp-grid input{flex:1}
+  /* responsive */
+  @media (max-width:520px){ .modal{padding:18px} .logo{width:56px;height:56px} }
+</style>
+</head>
+<body>
+
+<div class="hero" aria-hidden></div>
+
+<div class="overlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <button class="close" title="Close" onclick="document.getElementById('modal').style.display='none'">✕</button>
+
+    <div class="logo">HM</div>
+    <h3 class="title">Welcome back! Please Login</h3>
+    <div class="sub">Secure sign in to Heaven Match</div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" id="tab-password" onclick="switchTab('password')">Password</button>
+      <button class="tab-btn" id="tab-otp" onclick="switchTab('otp')">Login with OTP</button>
+    </div>
+
+    <!-- PASSWORD TAB -->
+    <div id="panel-password">
+      <form onsubmit="handlePasswordLogin(event)" novalidate>
+        <div class="row">
+          <label>Mobile No. / Email ID</label>
+          <input type="text" id="emailPhone" placeholder="Enter Mobile no. / Email ID" required />
+        </div>
+
+        <div class="row">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Enter password" />
+        </div>
+
+        <div class="row small">
+          <label style="display:flex;align-items:center"><input type="checkbox" style="margin-right:8px" /> Stay Logged in</label>
+          <a class="link" href="#" onclick="forgotPassword(event)">Forgot Password?</a>
+        </div>
+
+        <div class="row">
+          <button class="pink-btn" type="submit">Login</button>
+        </div>
+
+        <div class="or-line">OR</div>
+
+        <div class="row">
+          <button class="ghost-btn" type="button" onclick="switchTab('otp')">Login with OTP</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- OTP TAB -->
+    <div id="panel-otp" style="display:none">
+      <div class="row">
+        <label>Mobile No. / Email ID</label>
+        <input type="text" id="otpTarget" placeholder="Enter Mobile no. / Email ID" />
+      </div>
+
+      <div id="otp-send-row" class="row">
+        <button class="ghost-btn" onclick="sendOtp()">Send OTP</button>
+      </div>
+
+      <div id="otp-verify-row" class="row" style="display:none">
+        <label>Enter OTP</label>
+        <div class="otp-grid">
+          <input type="text" id="otpInput" maxlength="6" placeholder="6-digit OTP" />
+          <button class="pink-btn" onclick="verifyOtp()" style="padding:10px 14px">Verify</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">New to Heaven Match? <a class="link" href="#">Sign Up Free</a></div>
+  </div>
+</div>
+
+<script>
+  // small client-side OTP demo logic
+  let currentOtp = null;
+  let otpExpiry = 0;
+
+  function switchTab(tab){
+    document.getElementById('panel-password').style.display = tab === 'password' ? '' : 'none';
+    document.getElementById('panel-otp').style.display = tab === 'otp' ? '' : 'none';
+    document.getElementById('tab-password').classList.toggle('active', tab === 'password');
+    document.getElementById('tab-otp').classList.toggle('active', tab === 'otp');
+  }
+
+  function forgotPassword(evt){
+    evt && evt.preventDefault();
+    alert('Forgot password flow: open reset password page or send reset link to user email.');
+  }
+
+  function handlePasswordLogin(e){
+    e.preventDefault();
+    const id = document.getElementById('emailPhone').value.trim();
+    const pw = document.getElementById('password').value;
+    if(!id || !pw){ alert('Please enter email/phone and password'); return; }
+    // Replace with real API call
+    alert('Password login successful (demo).');
+    console.log('Login with', id);
+  }
+
+  function randomOtp(){
+    return Math.floor(100000 + Math.random()*900000).toString();
+  }
+
+  function sendOtp(){
+    const target = document.getElementById('otpTarget').value.trim();
+    if(!target){ alert('Enter an email or phone to receive OTP'); return; }
+    currentOtp = randomOtp();
+    otpExpiry = Date.now() + (5 * 60 * 1000); // 5 minutes
+    console.log('DEBUG OTP for', target, ':', currentOtp); // dev: OTP in console
+    alert('OTP sent to ' + target + '\\n(For local dev the OTP is printed to console)');
+    // show verify row
+    document.getElementById('otp-send-row').style.display='none';
+    document.getElementById('otp-verify-row').style.display='';
+  }
+
+  function verifyOtp(){
+    const val = document.getElementById('otpInput').value.trim();
+    if(!currentOtp){ alert('Request OTP first'); return; }
+    if(Date.now() > otpExpiry){ alert('OTP expired. Please resend.'); return; }
+    if(val === currentOtp){
+      alert('OTP verified — login success!');
+      console.log('OTP verification success');
+      // reset
+      currentOtp = null;
+      document.getElementById('otpInput').value='';
+      document.getElementById('otp-verify-row').style.display='none';
+      document.getElementById('otp-send-row').style.display='';
+    } else {
+      alert('Invalid OTP — try again');
+    }
+  }
+
+  // allow Enter to verify in OTP input
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      const otpPanelVisible = document.getElementById('panel-otp').style.display !== 'none';
+      const verifyRowVisible = document.getElementById('otp-verify-row').style.display !== 'none';
+      if(otpPanelVisible && verifyRowVisible){
+        e.preventDefault();
+        verifyOtp();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
