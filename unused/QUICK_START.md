@@ -1,66 +1,89 @@
-# ✅ All AI Features Ready - Error-Free Setup
+# Quick Start Guide - Microsoft Authentication Setup
 
-## 🎉 Status: ALL TESTS PASSED
+## The Error You're Seeing
 
-Your AI-powered Contact Page is **fully configured** and **error-free**!
+If you see: **"AADSTS900144: The request body must contain the following parameter: 'client_id'"**
 
----
+This means the Azure AD client ID is not configured. Follow these steps:
 
-## ✅ What's Working
+## Step 1: Create .env File
 
-- ✅ **OpenRouter API**: Connected and tested
-- ✅ **API Key**: Configured correctly
-- ✅ **AI Model**: Ready (meta-llama/llama-3.1-8b-instruct)
-- ✅ **All 6 AI Features**: Ready to use
-- ✅ **Build**: Compiles without errors
-- ✅ **Configuration**: All set
+In the project root (`Heaven-Match-adihome/heaven-match/`), create a file named `.env`:
 
----
-
-## 🚀 Start Your Server
-
-```powershell
-npm run dev
+```env
+REACT_APP_AAD_CLIENT_ID=your-client-id-here
+REACT_APP_AAD_TENANT_ID=your-tenant-id-here
 ```
 
-This will start:
-- Backend on port 3001
-- Frontend on port 3000
+## Step 2: Get Your Azure AD Credentials
 
----
+### Option A: Quick Test (Use Microsoft's Test Tenant)
 
-## 🧪 Test Your AI Features
+For testing purposes, you can use:
+```env
+REACT_APP_AAD_CLIENT_ID=00000000-0000-0000-0000-000000000000
+REACT_APP_AAD_TENANT_ID=common
+```
 
-1. **Open**: http://localhost:3000/contact
-2. **Click**: Live Chat button
-3. **Try**: "Hello, I need help with billing"
-4. **Watch**: AI responds in real-time!
+**Note:** This won't actually authenticate, but it will prevent the error. For real authentication, you need a real Azure AD app.
 
----
+### Option B: Create Your Own Azure AD App (Recommended)
 
-## ✨ All 6 AI Features Working
+1. Go to https://portal.azure.com
+2. Sign in with your Microsoft account
+3. Navigate to **Azure Active Directory** > **App registrations**
+4. Click **New registration**
+5. Fill in:
+   - **Name**: HeavenMatch
+   - **Supported account types**: Select "Accounts in any organizational directory and personal Microsoft accounts"
+   - **Redirect URI**: 
+     - Platform: **Single-page application (SPA)**
+     - URI: `http://localhost:3000`
+6. Click **Register**
+7. Copy the **Application (client) ID** → This is your `REACT_APP_AAD_CLIENT_ID`
+8. Copy the **Directory (tenant) ID** → This is your `REACT_APP_AAD_TENANT_ID`
 
-1. ✅ **AI Chat** - Real-time conversations
-2. ✅ **Intent Detection** - Auto-classify queries
-3. ✅ **Info Extraction** - Extract user details
-4. ✅ **FAQ Answers** - Context-aware responses
-5. ✅ **Smart Routing** - Best channel suggestions
-6. ✅ **Ticket Creation** - One-click tickets
+## Step 3: Update .env File
 
----
+Replace the placeholder values with your actual IDs:
 
-## 📝 Configuration
+```env
+REACT_APP_AAD_CLIENT_ID=12345678-1234-1234-1234-123456789abc
+REACT_APP_AAD_TENANT_ID=87654321-4321-4321-4321-cba987654321
+```
 
-Your `.env.local` is set:
-- Provider: OpenRouter
-- API Key: Configured
-- Model: meta-llama/llama-3.1-8b-instruct
+## Step 4: Restart Development Server
 
----
+**IMPORTANT:** After creating/updating the `.env` file, you MUST restart your development server:
 
-## 🎯 Everything is Ready!
+1. Stop the server (Ctrl+C)
+2. Start it again: `npm start`
 
-Just run `npm run dev` and test your AI features!
+Create React App only reads `.env` files when the server starts.
 
-**No errors. All features working. Ready for production!** 🚀
+## Step 5: Test
+
+1. Navigate to `http://localhost:3000/initial-register`
+2. Click "Continue with Microsoft"
+3. You should be redirected to Microsoft's login page (not an error page)
+
+## Troubleshooting
+
+### Still seeing the error after setting .env?
+
+1. **Check file location**: Make sure `.env` is in `Heaven-Match-adihome/heaven-match/` (same folder as `package.json`)
+2. **Check file name**: It must be exactly `.env` (not `.env.txt` or `.env.local`)
+3. **Restart server**: Environment variables are only loaded when the server starts
+4. **Check format**: No spaces around the `=` sign:
+   ```env
+   # ✅ Correct
+   REACT_APP_AAD_CLIENT_ID=abc123
+   
+   # ❌ Wrong
+   REACT_APP_AAD_CLIENT_ID = abc123
+   ```
+
+### Need More Help?
+
+See `ENV_SETUP.md` for detailed Azure AD setup instructions.
 

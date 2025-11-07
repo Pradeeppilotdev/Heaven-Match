@@ -4,7 +4,7 @@
  * Shows corporate address, phone numbers, email, WhatsApp, and social media links
  * Integrates with live chat widget to auto-fill contact form
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ContactForm from '../components/ContactForm';
 import LiveChatWidget from '../components/LiveChatWidget';
 import './ContactPage.css';
@@ -23,6 +23,20 @@ const ContactPage = () => {
   const handleFormFill = (info) => {
     setFormData(info);
   };
+
+  useEffect(() => {
+    const existingLink = document.querySelector('link[data-font-awesome="true"]');
+    if (!existingLink) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+      link.integrity = 'sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==';
+      link.crossOrigin = 'anonymous';
+      link.referrerPolicy = 'no-referrer';
+      link.setAttribute('data-font-awesome', 'true');
+      document.head.appendChild(link);
+    }
+  }, []);
 
   const contactInfo = {
     corporate: {
