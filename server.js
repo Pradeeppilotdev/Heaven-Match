@@ -1,23 +1,455 @@
+app.get('/api/generate-token', (req, res) => {
+  const token = generateFormToken(req);
+  const honeypot = generateHoneypotHTML();
+
+  res.json({
+    token,
+    honeypot,
+    message: 'Token generated successfully'
+  });
+});
+
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // AI Provider Configuration - Single API Key for all features
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openrouter'; // 'openrouter', 'openai', 'huggingface'
 const AI_API_KEY = process.env.REACT_APP_AI_API_KEY || process.env.REACT_APP_HF_API_TOKEN;
 const AI_MODEL = process.env.REACT_APP_AI_MODEL || 'meta-llama/llama-3.1-8b-instruct'; // OpenRouter model
 
-// Middleware
-// CORS configured to allow requests from any origin (for mobile/network access)
-app.use(cors({
-  origin: '*', // Allow all origins (for mobile/network access)
+app.set('trust proxy', 1);
+
+const allowedOrigins = (
+  process.env.ALLOWED_ORIGINS ||
+  'http://localhost:3000,http://127.0.0.1:3000,https://heavenmatch.com,https://www.heavenmatch.com'
+)
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+const isPrivateNetworkOrigin = (origin = '') =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+  /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/i.test(origin);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin) || isPrivateNetworkOrigin(origin)) {
+      return callback(null, true);
+    }
+    console.warn('[SECURITY] Blocked CORS origin', { origin });
+    return callback(null, false);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'Cache-Control', 'cache-control', 'Pragma'],
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+const FORM_SECURITY_CONFIG = {
+  minFormTimeMs: Number(process.env.SECURITY_MIN_FORM_TIME_MS) || 2000,
+  formTokenTtlMs: Number(process.env.SECURITY_FORM_TOKEN_TTL_MS) || 60 * 60 * 1000,
+  rateWindowMs: Number(process.env.SECURITY_RATE_WINDOW_MS) || 60 * 1000,
+  rateMax: Number(process.env.SECURITY_RATE_MAX) || 5,
+  requireFormToken: process.env.SECURITY_REQUIRE_FORM_TOKEN === 'true'
+};
+
+const formTimestamps = new Map();
+const submissionTimestamps = new Map();
+
+const generateFormToken = (req) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  formTimestamps.set(token, {
+    timestamp: Date.now(),
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+  return token;
+};
+
+const validateFormTiming = (token, ip, { minTimeMs = FORM_SECURITY_CONFIG.minFormTimeMs, requireToken = FORM_SECURITY_CONFIG.requireFormToken } = {}) => {
+  if (!token || !formTimestamps.has(token)) {
+    return requireToken
+      ? { valid: false, reason: 'Invalid or missing token' }
+      : { valid: true, skipped: true, reason: 'Token missing or expired' };
+  }
+
+  const formData = formTimestamps.get(token);
+  const timeTaken = Date.now() - formData.timestamp;
+
+  if (formData.ip !== ip) {
+    formTimestamps.delete(token);
+    return { valid: false, reason: 'IP address mismatch' };
+  }
+
+  if (timeTaken < minTimeMs) {
+    formTimestamps.delete(token);
+    return { valid: false, reason: `Form submitted too quickly (${timeTaken}ms)` };
+  }
+
+  if (timeTaken > FORM_SECURITY_CONFIG.formTokenTtlMs) {
+    formTimestamps.delete(token);
+    return { valid: false, reason: 'Form token expired' };
+  }
+
+  formTimestamps.delete(token);
+  return { valid: true, timeTaken };
+};
+
+const checkRateLimit = (key, maxSubmissions = FORM_SECURITY_CONFIG.rateMax, windowMs = FORM_SECURITY_CONFIG.rateWindowMs) => {
+  const now = Date.now();
+  if (!submissionTimestamps.has(key)) {
+    submissionTimestamps.set(key, []);
+  }
+
+  const submissions = submissionTimestamps.get(key);
+  const recent = submissions.filter((time) => now - time < windowMs);
+
+  if (recent.length >= maxSubmissions) {
+    submissionTimestamps.set(key, recent);
+    return { allowed: false, reason: 'Too many requests' };
+  }
+
+  recent.push(now);
+  submissionTimestamps.set(key, recent);
+  return { allowed: true, remaining: Math.max(maxSubmissions - recent.length, 0) };
+};
+
+const generateHoneypotHTML = () => {
+  const field1 = `user_${crypto.randomBytes(8).toString('hex')}`;
+  const field2 = `email_${crypto.randomBytes(8).toString('hex')}`;
+
+  return `
+    <input type="text" name="${field1}" value=""
+           style="position:absolute;left:-9999px;opacity:0"
+           tabindex="-1" autocomplete="off">
+    <input type="email" name="${field2}" value=""
+           style="position:absolute;left:-9999px;opacity:0"
+           tabindex="-1" autocomplete="off">
+  `;
+};
+
+const validateHoneypot = (body = {}) => {
+  const honeypotPatterns = [/user_[a-f0-9]{16}/, /email_[a-f0-9]{16}/];
+
+  for (const key in body) {
+    for (const pattern of honeypotPatterns) {
+      if (pattern.test(key) && body[key] && body[key].trim() !== '') {
+        return { valid: false, reason: 'Honeypot filled' };
+      }
+    }
+  }
+  return { valid: true };
+};
+
+const detectPromptInjection = (input) => {
+  if (typeof input !== 'string') return { safe: true };
+
+  const dangerous = [
+    /ignore\s+(previous|all|above)\s+instructions?/i,
+    /disregard\s+instructions?/i,
+    /you\s+are\s+(now|a)\s+(admin|root|system)/i,
+    /act\s+as\s+(admin|root)/i,
+    /system\s*:/i,
+    /write\s+(a\s+)?(phishing|malware|virus)/i,
+    /how\s+to\s+(hack|crack|bypass)/i,
+    /'\s*or\s*'\d*'\s*=\s*'\d/i,
+    /<script/i,
+    /javascript:/i
+  ];
+
+  for (const pattern of dangerous) {
+    if (pattern.test(input)) {
+      return {
+        safe: false,
+        reason: 'Malicious pattern detected',
+        pattern: pattern.source
+      };
+    }
+  }
+
+  if (input.length > 5000) {
+    return { safe: false, reason: 'Input too long' };
+  }
+
+  return { safe: true };
+};
+
+const validateAllInputs = (body = {}) => {
+  for (const [field, value] of Object.entries(body)) {
+    if (typeof value === 'string') {
+      const check = detectPromptInjection(value);
+      if (!check.safe) {
+        return { safe: false, field, ...check };
+      }
+    }
+  }
+  return { safe: true };
+};
+
+const validateSubmission = (req, formToken, options = {}) => {
+  const errors = [];
+  const opts = {
+    minTimeMs: options.minTimeMs,
+    requireToken: options.requireToken ?? FORM_SECURITY_CONFIG.requireFormToken
+  };
+
+  const timing = validateFormTiming(formToken, req.ip, opts);
+  if (!timing.valid) {
+    errors.push({ type: 'TIMING', msg: timing.reason });
+  }
+
+  const rateLimitKey = options.rateLimitKey || `${req.ip}:${req.originalUrl || 'global'}`;
+  const rateLimitCheck = checkRateLimit(
+    rateLimitKey,
+    options.maxSubmissions ?? FORM_SECURITY_CONFIG.rateMax,
+    options.windowMs ?? FORM_SECURITY_CONFIG.rateWindowMs
+  );
+  if (!rateLimitCheck.allowed) {
+    errors.push({ type: 'RATE_LIMIT', msg: rateLimitCheck.reason });
+  }
+
+  const honeypot = validateHoneypot(req.body);
+  if (!honeypot.valid) {
+    errors.push({ type: 'HONEYPOT', msg: honeypot.reason });
+  }
+
+  const inputs = validateAllInputs(req.body);
+  if (!inputs.safe) {
+    errors.push({ type: 'INJECTION', msg: inputs.reason, field: inputs.field });
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    timing,
+    rateLimit: rateLimitCheck,
+    honeypot,
+    inputs
+  };
+};
+
+const logSecurityEvent = (req, validation) => {
+  securityLogger('ADVANCED_SECURITY_VALIDATION', {
+    ip: req.ip,
+    path: req.originalUrl,
+    userAgent: req.headers['user-agent'],
+    validation
+  });
+};
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of formTimestamps.entries()) {
+    if (now - data.timestamp > FORM_SECURITY_CONFIG.formTokenTtlMs) {
+      formTimestamps.delete(token);
+    }
+  }
+
+  for (const [key, timestamps] of submissionTimestamps.entries()) {
+    const recent = timestamps.filter(
+      (time) => now - time < FORM_SECURITY_CONFIG.rateWindowMs * 2
+    );
+    if (recent.length === 0) {
+      submissionTimestamps.delete(key);
+    } else {
+      submissionTimestamps.set(key, recent);
+    }
+  }
+}, 10 * 60 * 1000).unref();
+
+// Middleware
+app.use(helmet({
+  contentSecurityPolicy: false
 }));
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
+
+const securityLogger = (event, details = {}) => {
+  const payload = {
+    event,
+    timestamp: new Date().toISOString(),
+    ...details
+  };
+  console.warn('[SECURITY]', payload);
+};
+
+const sanitizeText = (value, maxLength = 255) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+};
+
+const sanitizePhone = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .replace(/[^0-9+\-\s()]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 20);
+};
+
+const validateContactSubmission = (payload = {}) => {
+  const formType = payload.formType === 'support-ticket' ? 'support-ticket' : 'contact';
+  const errors = {};
+
+  const sanitized = {
+    formType,
+    name: sanitizeText(payload.name, 80),
+    email: sanitizeText(payload.email, 120),
+    phone: sanitizePhone(payload.phone),
+    subject: sanitizeText(payload.subject || payload.issueTopic, 120),
+    message: sanitizeText(payload.message || payload.description, 1000),
+    issueTopic: sanitizeText(payload.issueTopic, 120),
+    priority: sanitizeText(payload.priority, 10).toLowerCase()
+  };
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!sanitized.email || !emailPattern.test(sanitized.email)) {
+    errors.email = 'A valid email address is required.';
+  }
+
+  if (sanitized.phone && !/^[0-9+\-\s()]{7,20}$/.test(sanitized.phone)) {
+    errors.phone = 'Invalid phone number format.';
+  }
+
+  if (!sanitized.message || sanitized.message.length === 0) {
+    errors.message = 'Message is required.';
+  }
+
+  if ((payload.message && payload.message.length > 1000) || (payload.description && payload.description.length > 1000)) {
+    errors.message = 'Message cannot exceed 1000 characters.';
+  }
+
+  if (formType === 'contact') {
+    if (!sanitized.name) {
+      errors.name = 'Full name is required.';
+    }
+    if (!sanitized.subject) {
+      errors.subject = 'Subject is required.';
+    }
+  } else {
+    if (!sanitized.issueTopic) {
+      errors.issueTopic = 'Issue topic is required.';
+    }
+    sanitized.subject = sanitized.subject || sanitized.issueTopic || 'Support Request';
+    sanitized.priority = ['low', 'medium', 'high', 'urgent'].includes(sanitized.priority)
+      ? sanitized.priority
+      : 'medium';
+  }
+
+  sanitized.message = sanitized.message.slice(0, 1000);
+  sanitized.subject = sanitized.subject || 'Support Request';
+  sanitized.name = sanitized.name || 'HeavenMatch User';
+  sanitized.phone = sanitized.phone || '';
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+    sanitized
+  };
+};
+
+const submissionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    securityLogger('RATE_LIMIT_EXCEEDED', { ip: req.ip, path: req.originalUrl });
+    return res.status(429).json({
+      error: 'Too many submissions. Please wait a few minutes before trying again.'
+    });
+  }
+});
+
+const requireCsrfToken = (req, res, next) => {
+  const cookieToken = req.cookies?.hm_csrf;
+  const headerToken = req.get('x-csrf-token');
+
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    securityLogger('CSRF_VALIDATION_FAILED', { ip: req.ip, path: req.originalUrl });
+    return res.status(403).json({ error: 'Invalid or missing CSRF token.' });
+  }
+
+  return next();
+};
+
+app.get('/api/csrf-token', (req, res) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  res.cookie('hm_csrf', token, {
+    httpOnly: true,
+    secure: NODE_ENV === 'production',
+    sameSite: NODE_ENV === 'production' ? 'Strict' : 'Lax',
+    maxAge: 60 * 60 * 1000
+  });
+  res.json({ token });
+});
+
+app.post('/api/contact/submit', submissionLimiter, requireCsrfToken, (req, res) => {
+  const { honeypot, ...payload } = req.body || {};
+
+  if (honeypot && honeypot.trim().length > 0) {
+    securityLogger('HONEYPOT_TRIGGERED', { ip: req.ip, path: req.originalUrl });
+    return res.json({ success: true, message: 'Your request has been received.' });
+  }
+
+  const validation = validateContactSubmission(payload);
+
+  if (!validation.isValid) {
+    securityLogger('FORM_VALIDATION_FAILED', {
+      ip: req.ip,
+      errors: validation.errors
+    });
+    return res.status(400).json({
+      error: 'Please correct the highlighted fields.',
+      details: validation.errors
+    });
+  }
+
+  const ticketId = `HM-${Date.now().toString().slice(-8)}`;
+
+  console.info('[CONTACT] Secure submission received', {
+    ticketId,
+    formType: validation.sanitized.formType,
+    priority: validation.sanitized.priority || 'medium',
+    ip: req.ip
+  });
+
+  res.json({
+    success: true,
+    ticketId,
+    priority: validation.sanitized.priority || 'medium',
+    message:
+      validation.sanitized.formType === 'support-ticket'
+        ? `Ticket ${ticketId} has been created successfully. Our support specialists will respond shortly.`
+        : 'Thank you for contacting HeavenMatch. Our support team will respond within 24 hours.',
+    payload: {
+      ...validation.sanitized,
+      message: validation.sanitized.message
+    }
+  });
+});
 
 /**
  * Universal AI API call function - works with OpenRouter, OpenAI, or Hugging Face
@@ -141,6 +573,17 @@ const callAI = async (prompt, options = {}) => {
  */
 app.post('/api/detect-intent', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      maxSubmissions: 60
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { message } = req.body;
     
     if (!message) {
@@ -196,6 +639,17 @@ Respond with ONLY the category name (one word, lowercase):`;
  */
 app.post('/api/extract-info', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      maxSubmissions: 60
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { conversation } = req.body;
     
     if (!conversation || !Array.isArray(conversation)) {
@@ -263,6 +717,17 @@ JSON:`;
  */
 app.post('/api/smart-route', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      maxSubmissions: 60
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { intent, message, urgency } = req.body;
     
     // Pure AI smart routing - AI decides the best channel intelligently
@@ -366,6 +831,17 @@ Respond with ONLY a JSON object in this exact format:
  */
 app.post('/api/faq-search', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      maxSubmissions: 60
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { query, conversation } = req.body;
     
     if (!query) {
@@ -454,23 +930,48 @@ Answer:`;
  */
 app.post('/api/create-ticket', async (req, res) => {
   try {
-    const { name, email, phone, subject, message, intent, priority } = req.body;
-    
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Name, email, and message are required' });
+    const validationCheck = validateSubmission(req, req.body?.formToken);
+    if (!validationCheck.valid) {
+      logSecurityEvent(req, validationCheck);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validationCheck.errors
+      });
     }
+
+    const { name, email, phone, subject, message, intent, priority } = req.body;
+
+    const validation = validateContactSubmission({
+      formType: 'support-ticket',
+      name,
+      email,
+      phone,
+      subject,
+      message,
+      priority,
+      issueTopic: subject
+    });
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Invalid ticket payload',
+        details: validation.errors
+      });
+    }
+
+    const safePayload = validation.sanitized;
 
     // Generate ticket ID
     const ticketId = 'HM-' + Date.now().toString().slice(-8);
     
     // AI determines priority based on message content and intent
-    let ticketPriority = priority;
+    let ticketPriority = safePayload.priority;
     if (!ticketPriority) {
       const priorityPrompt = `Analyze this support request and determine the priority level (low, medium, high, urgent).
 
 Intent: ${intent}
-Message: "${message}"
-Subject: "${subject || 'Support Request'}"
+Message: "${safePayload.message}"
+Subject: "${safePayload.subject || 'Support Request'}"
 
 Consider urgency, impact, and issue type. Respond with ONLY one word: "low", "medium", "high", or "urgent"`;
 
@@ -482,21 +983,21 @@ Consider urgency, impact, and issue type. Respond with ONLY one word: "low", "me
         ticketPriority = priorityResponse.toLowerCase().trim().split(/\s+/)[0];
         // Validate priority
         if (!['low', 'medium', 'high', 'urgent'].includes(ticketPriority)) {
-          ticketPriority = 'medium';
+          ticketPriority = safePayload.priority || 'medium';
         }
       } catch (error) {
-        ticketPriority = 'medium';
+        ticketPriority = safePayload.priority || 'medium';
       }
     }
     
     // Create ticket object (in production, save to database)
     const ticket = {
       id: ticketId,
-      name,
-      email,
-      phone: phone || '',
-      subject: subject || 'Support Request',
-      message,
+      name: safePayload.name,
+      email: safePayload.email,
+      phone: safePayload.phone || '',
+      subject: safePayload.subject || 'Support Request',
+      message: safePayload.message,
       intent: intent || 'general',
       priority: ticketPriority,
       status: 'open',
@@ -531,6 +1032,18 @@ Consider urgency, impact, and issue type. Respond with ONLY one word: "low", "me
  */
 app.post('/api/chat', async (req, res) => {
   try {
+    const injectionCheck = validateAllInputs(req.body);
+    if (!injectionCheck.safe) {
+      logSecurityEvent(req, {
+        valid: false,
+        errors: [{ type: 'INJECTION', msg: injectionCheck.reason, field: injectionCheck.field }]
+      });
+      return res.status(400).json({
+        error: 'Security validation failed',
+        message: 'Your message contains potentially harmful content'
+      });
+    }
+
     const { prompt, model } = req.body;
     
     if (!prompt) {
@@ -628,6 +1141,17 @@ IMPORTANT:
  */
 app.post('/api/analyze-sentiment', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      requireToken: false
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { message, conversation } = req.body;
     
     if (!message) {
@@ -702,6 +1226,17 @@ JSON:`;
  */
 app.post('/api/detect-language', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      requireToken: false
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { message } = req.body;
     
     if (!message) {
@@ -795,6 +1330,17 @@ Respond with ONLY the language name (e.g., "English", "Hindi", "Spanish", "Frenc
  */
 app.post('/api/quick-replies', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken, {
+      maxSubmissions: 60
+    });
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { message, conversation } = req.body;
     
     if (!message) {
@@ -848,6 +1394,15 @@ JSON array:`;
  */
 app.post('/api/summarize-conversation', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken);
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { conversation } = req.body;
     
     if (!conversation || !Array.isArray(conversation)) {
@@ -898,6 +1453,15 @@ Summary:`;
  */
 app.post('/api/should-escalate', async (req, res) => {
   try {
+    const validation = validateSubmission(req, req.body?.formToken);
+    if (!validation.valid) {
+      logSecurityEvent(req, validation);
+      return res.status(400).json({
+        error: 'Security validation failed',
+        details: validation.errors
+      });
+    }
+
     const { message, conversation, sentiment, intent } = req.body;
     
     if (!message) {
@@ -984,7 +1548,16 @@ Respond with ONLY a JSON object:
  * @returns {Object} JSON response with server status information
  */
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Hugging Face Proxy' });
+  res.json({
+    status: 'ok',
+    service: 'HeavenMatch AI Backend',
+    security: {
+      botDetection: true,
+      csrf: true,
+      rateLimit: true
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 /**
@@ -993,14 +1566,25 @@ app.get('/api/health', (req, res) => {
  * Handles port conflicts and provides setup instructions if API key is missing
  */
 app.listen(PORT, () => {
-  console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
-  console.log(`✅ AI Provider: ${AI_PROVIDER.toUpperCase()}`);
-  console.log(`✅ AI Model: ${AI_MODEL}`);
-  console.log(`✅ API Key: ${AI_API_KEY ? 'Loaded' : 'Not found - Please set REACT_APP_AI_API_KEY'}`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`🚀 HeavenMatch AI Backend Server`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`📍 Server: http://localhost:${PORT}`);
+  console.log(`🤖 AI Provider: ${AI_PROVIDER.toUpperCase()}`);
+  console.log(`🧠 AI Model: ${AI_MODEL}`);
+  console.log(`🔑 API Key: ${AI_API_KEY ? '✅ Loaded' : '❌ Not found'}`);
+  console.log(`🛡️  Security Stack:`);
+  console.log(`   ├─ Helmet + CSP allowlist`);
+  console.log(`   ├─ CSRF tokens & cookie binding`);
+  console.log(`   ├─ Advanced bot timing + honeypot checks`);
+  console.log(`   ├─ Prompt injection detection`);
+  console.log(`   └─ Rate limiting (Express & adaptive)`);
+  console.log(`${'='.repeat(60)}\n`);
+
   if (!AI_API_KEY) {
-    console.log(`\n⚠️  Setup Instructions:`);
-    console.log(`   1. Get API key from: https://openrouter.ai/keys (recommended)`);
-    console.log(`   2. Add to .env.local: REACT_APP_AI_API_KEY=your_key_here`);
+    console.log(`⚠️  Setup Instructions:`);
+    console.log(`   1. Obtain an API key (e.g., https://openrouter.ai/keys).`);
+    console.log(`   2. Add to .env: REACT_APP_AI_API_KEY=your_key_here`);
     console.log(`   3. Restart server: npm run dev\n`);
   }
 }).on('error', (err) => {

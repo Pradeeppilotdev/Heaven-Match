@@ -1,11 +1,15 @@
 /**
  * ContactForm Component
- * Purpose: Displays a contact form for users to submit inquiries with validation
+ * Purpose: Displays a contact form for users to submit inquiries with validation and secure submission controls
  * Pre-fills form fields from chat-extracted data if available
  * @param {Object} initialData - Optional initial form data extracted from chat (name, email, phone, subject)
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './ContactForm.css';
+import { getBackendURL } from '../utils/backend';
+import useCsrfToken from '../hooks/useCsrfToken';
+
+const normalizeDigits = (value = '') => value.replace(/[^0-9]/g, '');
 
 const ContactForm = ({ initialData }) => {
   const [formData, setFormData] = useState({
@@ -16,14 +20,15 @@ const ContactForm = ({ initialData }) => {
     message: '',
     file: null
   });
-  const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [status, setStatus] = useState({ type: null, message: '' });
+  const [honeypot, setHoneypot] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { csrfToken, csrfError, refreshCsrfToken } = useCsrfToken();
 
-  /**
-   * Effect: Update form fields when initialData changes (from chat widget)
-   * Purpose: Automatically fills form fields when user info is extracted from chat conversation
-   */
-  React.useEffect(() => {
+  const showMessage = (type, message) => setStatus({ type, message });
+
+  useEffect(() => {
     if (initialData) {
       setFormData(prev => ({
         ...prev,
@@ -35,100 +40,153 @@ const ContactForm = ({ initialData }) => {
     }
   }, [initialData]);
 
-  /**
-   * handleChange - Handles input field changes
-   * Purpose: Updates form state when user types in any input field and clears validation errors
-   * @param {Event} e - The change event from the input element
-   */
+  useEffect(() => {
+    if (csrfError) {
+      showMessage('error', csrfError);
+    }
+  }, [csrfError]);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+    let nextValue = value;
+
+    if (name === 'message') {
+      nextValue = value.slice(0, 1000);
+    }
+
+    if (name === 'subject') {
+      nextValue = value.slice(0, 120);
+    }
+
+    if (name === 'phone') {
+      nextValue = value.slice(0, 20);
+    }
+
     if (name === 'file') {
       setFormData({ ...formData, file: files[0] });
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData({ ...formData, [name]: nextValue });
     }
-    // Clear error when user starts typing
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
   };
 
-  /**
-   * validateForm - Validates all form fields before submission
-   * Purpose: Checks that all required fields are filled and formatted correctly
-   * Validates: name (required), email (required, valid format), phone (required, 10 digits), 
-   * subject (required), message (required)
-   * @returns {boolean} True if all validations pass, false otherwise
-   */
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Name is required.';
     }
-    
+
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = 'Please enter a valid email.';
     }
-    
+
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/[^0-9]/g, ''))) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number';
+      newErrors.phone = 'Phone number is required.';
+    } else if (normalizeDigits(formData.phone).length < 7) {
+      newErrors.phone = 'Please enter a valid phone number.';
     }
-    
+
     if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+      newErrors.subject = 'Subject is required.';
     }
-    
+
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+      newErrors.message = 'Message is required.';
+    } else if (formData.message.trim().length > 1000) {
+      newErrors.message = 'Message cannot exceed 1000 characters.';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * handleSubmit - Handles form submission
-   * Purpose: Validates form, simulates submission, shows success message, and resets form
-   * Generates a ticket reference number for the user
-   * @param {Event} e - The form submit event
-   */
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      // Simulate form submission
-      // Form data would be sent to server here
-      
-      // Show success message
-      setSubmitted(true);
-      
-      // Auto acknowledgment
-      setTimeout(() => {
-        alert('Thank you for contacting us! We have received your message and will respond within 24 hours. Your ticket reference number is: HM-' + Date.now().toString().slice(-6));
-      }, 100);
-      
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          subject: '',
-          message: '',
-          file: null
-        });
-        setSubmitted(false);
-      }, 3000);
+
+    if (honeypot) {
+      showMessage('success', 'Thank you! Your request has been received.');
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!csrfToken) {
+      showMessage('error', 'Security token missing. Please refresh the page and try again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    showMessage(null, '');
+
+    try {
+      const payload = {
+        formType: 'contact',
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+        honeypot
+      };
+
+      const response = await fetch(`${getBackendURL()}/api/contact/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to submit your request right now.');
+      }
+
+      showMessage('success', result.message || 'Thank you for contacting us. Our team will respond shortly.');
+
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        file: null
+      });
+      setErrors({});
+      setHoneypot('');
+      refreshCsrfToken();
+    } catch (error) {
+      console.error('Contact form submission error:', error);
+      showMessage('error', error.message || 'Something went wrong. Please try again in a moment.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form className="contact-form" onSubmit={handleSubmit}>
+    <form className="contact-form" onSubmit={handleSubmit} noValidate>
+      {status.message && (
+        <div
+          className={`form-feedback ${status.type || 'neutral'}`}
+          role="alert"
+          aria-live="assertive"
+        >
+          <i className={`fas ${status.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}`}></i>
+          <span>{status.message}</span>
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="name">Full Name *</label>
         <input
@@ -139,6 +197,9 @@ const ContactForm = ({ initialData }) => {
           onChange={handleChange}
           className={errors.name ? 'error' : ''}
           placeholder="Enter your full name"
+          required
+          autoComplete="name"
+          maxLength={80}
         />
         {errors.name && <span className="error-message">{errors.name}</span>}
       </div>
@@ -153,6 +214,9 @@ const ContactForm = ({ initialData }) => {
           onChange={handleChange}
           className={errors.email ? 'error' : ''}
           placeholder="Enter your email"
+          required
+          autoComplete="email"
+          maxLength={120}
         />
         {errors.email && <span className="error-message">{errors.email}</span>}
       </div>
@@ -166,7 +230,11 @@ const ContactForm = ({ initialData }) => {
           value={formData.phone}
           onChange={handleChange}
           className={errors.phone ? 'error' : ''}
-          placeholder="Enter your 10-digit phone number"
+          placeholder="Enter your phone number"
+          required
+          inputMode="tel"
+          pattern="^[0-9+\-\s()]{7,20}$"
+          maxLength={20}
         />
         {errors.phone && <span className="error-message">{errors.phone}</span>}
       </div>
@@ -181,6 +249,8 @@ const ContactForm = ({ initialData }) => {
           onChange={handleChange}
           className={errors.subject ? 'error' : ''}
           placeholder="What is this regarding?"
+          required
+          maxLength={120}
         />
         {errors.subject && <span className="error-message">{errors.subject}</span>}
       </div>
@@ -195,7 +265,10 @@ const ContactForm = ({ initialData }) => {
           className={errors.message ? 'error' : ''}
           rows="5"
           placeholder="Please describe your query in detail..."
+          required
+          maxLength={1000}
         ></textarea>
+        <small>{formData.message.length}/1000 characters</small>
         {errors.message && <span className="error-message">{errors.message}</span>}
       </div>
 
@@ -216,18 +289,26 @@ const ContactForm = ({ initialData }) => {
         )}
       </div>
 
-      {submitted && (
-        <div className="success-message">
-          <i className="fas fa-check-circle"></i> Form submitted successfully!
-        </div>
-      )}
+      <div className="honeypot-field" aria-hidden="true">
+        <label htmlFor="company">Company</label>
+        <input
+          type="text"
+          id="company"
+          name="company"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          tabIndex="-1"
+          autoComplete="off"
+        />
+      </div>
 
-      <button type="submit" className="submit-btn">
-        <i className="fas fa-paper-plane"></i> Send Message
+      <button type="submit" className="submit-btn" disabled={isSubmitting}>
+        <i className="fas fa-paper-plane"></i> {isSubmitting ? 'Sending...' : 'Send Message'}
       </button>
     </form>
   );
 };
 
 export default ContactForm;
+
 

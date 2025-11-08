@@ -1,13 +1,63 @@
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .ticket-system {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
+.ticket-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  animation: fadeInUp 0.35s ease;
+}
+
+.ticket-feedback i {
+  font-size: 1.2rem;
+}
+
+.ticket-feedback.success {
+  background: linear-gradient(135deg, rgba(212, 237, 218, 0.95) 0%, rgba(195, 230, 203, 0.9) 100%);
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.ticket-feedback.error {
+  background: linear-gradient(135deg, rgba(253, 236, 234, 0.95) 0%, rgba(252, 226, 222, 0.9) 100%);
+  border-color: #f5c6cb;
+  color: #7f1d1d;
+}
+
+.ticket-feedback.info {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
 .ticket-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.ticket-form .error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
 }
 
 .ticket-form .form-group {
@@ -68,6 +118,13 @@
   background: #db2777;
   transform: translateY(-2px);
   box-shadow: 0 14px 24px rgba(236, 72, 153, 0.22);
+}
+
+.submit-ticket-btn:disabled {
+  background: #f9a8d4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .ticket-success {
@@ -166,6 +223,17 @@
   background: #db2777;
   transform: translateY(-1px);
   box-shadow: 0 12px 24px rgba(236, 72, 153, 0.22);
+}
+
+.honeypot-field {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {

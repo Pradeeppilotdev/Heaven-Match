@@ -82,6 +82,12 @@ const HelpPage = () => {
       category: 'safety',
       question: 'How do you verify profiles?',
       answer: 'We verify profiles through multiple methods including phone verification, email verification, and photo verification. Premium members can request additional verification badges to increase their profile credibility.'
+    },
+    {
+      id: 11,
+      category: 'safety',
+      question: 'Where is my data stored and how is it secured?',
+      answer: 'All member profiles, conversations, and payment data are encrypted with AES-256 and hosted in Tier IV data centers located in Mumbai and Hyderabad, India. Information is transmitted over TLS 1.3 and managed under ISO 27001 controls in compliance with the Information Technology Act, 2000.'
     }
   ];
 
@@ -128,6 +134,34 @@ const HelpPage = () => {
       title: 'Contact Support',
       description: 'Get help from our support team',
       link: '/support'
+    }
+  ];
+
+  const securityHighlights = [
+    {
+      icon: 'fas fa-shield-alt',
+      title: 'Enable Multi-Factor Authentication',
+      details: [
+        'Open Account Settings → Security.',
+        'Select "Enable MFA" and choose SMS OTP or authenticator app.',
+        'Verify using the code on your trusted device to lock future logins.'
+      ]
+    },
+    {
+      icon: 'fas fa-exclamation-triangle',
+      title: 'Report Suspicious Profiles',
+      description:
+        'Tap the "Report" button on any profile or chat, or email safety@heavenmatch.com with screenshots. Urgent flags alert our 24/7 safety team within 15 minutes.',
+      cta: {
+        href: 'mailto:safety@heavenmatch.com',
+        label: 'Email safety@heavenmatch.com'
+      }
+    },
+    {
+      icon: 'fas fa-database',
+      title: 'Data Residency & Protection',
+      description:
+        'Member information stays within ISO 27001 certified data centres in Mumbai and Hyderabad, protected with AES-256 encryption at rest and TLS 1.3 in transit, fully aligned with Indian data residency requirements.'
     }
   ];
 
@@ -195,6 +229,34 @@ const HelpPage = () => {
                   Learn More <i className="fas fa-arrow-right"></i>
                 </span>
               </a>
+            ))}
+          </div>
+        </section>
+
+        {/* Security & Trust */}
+        <section className="security-section">
+          <h2 className="section-title">Security & Trust Essentials</h2>
+          <div className="security-grid">
+            {securityHighlights.map((item, index) => (
+              <article key={index} className="security-card">
+                <div className="security-icon">
+                  <i className={item.icon}></i>
+                </div>
+                <h3>{item.title}</h3>
+                {item.details && (
+                  <ul className="security-list">
+                    {item.details.map((detail, idx) => (
+                      <li key={idx}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
+                {item.description && <p>{item.description}</p>}
+                {item.cta && (
+                  <a href={item.cta.href} className="security-link">
+                    {item.cta.label} <i className="fas fa-arrow-right"></i>
+                  </a>
+                )}
+              </article>
             ))}
           </div>
         </section>

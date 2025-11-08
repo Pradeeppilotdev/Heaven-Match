@@ -15,6 +15,41 @@
   gap: 1.5rem;
 }
 
+.form-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  animation: fadeInUp 0.35s ease-out;
+}
+
+.form-feedback i {
+  font-size: 1.2rem;
+}
+
+.form-feedback.success {
+  background: linear-gradient(135deg, rgba(212, 237, 218, 0.95) 0%, rgba(195, 230, 203, 0.9) 100%);
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.form-feedback.error {
+  background: linear-gradient(135deg, rgba(253, 236, 234, 0.95) 0%, rgba(252, 226, 222, 0.9) 100%);
+  border-color: #f5c6cb;
+  color: #7f1d1d;
+}
+
+.form-feedback.neutral {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #1f2937;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -105,6 +140,17 @@
   font-size: 1.2rem;
 }
 
+.honeypot-field {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .submit-btn {
   align-self: flex-start;
   min-width: 320px;
@@ -133,6 +179,13 @@
 .submit-btn:hover {
   background: #c0266d;
   transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  background: #f9a8d4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .submit-btn:active {

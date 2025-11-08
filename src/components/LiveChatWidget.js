@@ -8,6 +8,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import './LiveChatWidget.css';
+import { getBackendURL } from '../utils/backend';
 
 const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
   const [messages, setMessages] = useState([
@@ -39,45 +40,6 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
   
   // Get model from environment variable (token is handled by backend)
   const HF_MODEL = process.env.REACT_APP_HF_MODEL || 'meta-llama/Meta-Llama-3-8B-Instruct';
-
-  /**
-   * getBackendURL - Gets the correct backend URL for API calls
-   * Purpose: Automatically detects the correct backend URL whether accessed from localhost or network (mobile)
-   * Handles both development and production environments
-   * @returns {string} The backend API URL
-   */
-  const getBackendURL = () => {
-    // If environment variable is set, use it (highest priority)
-    if (process.env.REACT_APP_PROXY_URL) {
-      return process.env.REACT_APP_PROXY_URL;
-    }
-    
-    // In production, try to use same origin first (backend should be on same domain)
-    if (process.env.NODE_ENV === 'production') {
-      // If backend is on same domain, use same origin
-      const origin = window.location.origin;
-      // Remove port if exists, then add backend port
-      const baseUrl = origin.includes(':') ? origin.split(':').slice(0, -1).join(':') : origin;
-      return `${baseUrl}:3001`;
-    }
-    
-    // In development, detect if accessing from network IP or localhost
-    const hostname = window.location.hostname;
-    
-    // If accessing from localhost, use localhost
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3001';
-    }
-    
-    // If accessing from network IP (like 192.168.x.x or 10.x.x.x), use that IP
-    // This allows mobile devices on same network to connect
-    if (hostname.match(/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/)) {
-      return `http://${hostname}:3001`;
-    }
-    
-    // Fallback to localhost
-    return 'http://localhost:3001';
-  };
 
   // Debug: Check backend connection (only in development)
   useEffect(() => {
