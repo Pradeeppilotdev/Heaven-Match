@@ -1,3 +1,5 @@
+//ai.js
+
 import { GoogleGenAI } from "@google/genai";
 
 // Gemini Configuration (Profile Enrichment & Ranking)
@@ -255,7 +257,7 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
     });
 
     const result = JSON.parse(response.text);
-    console.log("AI Response:", result);
+    // Processing AI response
     
     // Start with pre-extracted data (pattern matching results)
     const mergedData = { ...preExtractedData };
@@ -283,7 +285,7 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
         // But for most fields, we'll keep the existing value to avoid overwriting user's previous answers
         if (currentValue !== newValue && key !== 'gender') {
           // Only log, but allow update for explicit user input
-          console.log(`Field ${key} has existing value "${currentValue}", updating to "${newValue}"`);
+          // Updating field value
         }
       }
       
@@ -293,7 +295,7 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
       }
     });
     
-    console.log("Final merged data:", mergedData);
+    // Final merged data ready
 
     // Check if all required fields are collected
     const allFieldsCollected = requiredFields.every(field => 
@@ -308,8 +310,6 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
 
   } catch (error) {
     console.error("Questionnaire AI Error:", error);
-    console.log("User message:", userMessage);
-    console.log("Current collected data:", collectedData);
     
     // Fallback: Use pattern matching for extraction
     const genderExtracted = extractGender(userMessage);
@@ -321,7 +321,7 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
       ...(ageRangeExtracted && !collectedData.ageRange && { ageRange: ageRangeExtracted })
     };
     
-    console.log("Fallback extracted data:", fallbackData);
+    // Using fallback extracted data
     
     // Fallback: try to determine next question based on missing fields
     const missingFields = requiredFields.filter(field => 
@@ -366,7 +366,7 @@ ${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('
 export const getGeminiRankedRecommendations = async (candidateProfiles, userProfile) => {
     // Fallback: if no API key configured, return a simple deterministic ordering
     if (!GEMINI_API_KEY) {
-        console.warn('REACT_APP_GEMINI_API_KEY missing. Using local fallback ranking.');
+        // Using local fallback ranking (API key missing)
         return candidateProfiles.slice(0, 8).map(p => p.id);
     }
     
@@ -410,7 +410,7 @@ export const getGeminiRankedRecommendations = async (candidateProfiles, userProf
     `;
 
     try {
-        console.log('Calling Gemini API for ranking with', candidateProfiles.length, 'candidates');
+        // Calling Gemini API for ranking
         const response = await ai.models.generateContent({
             model: GEMINI_MODEL,
             contents: prompt,
@@ -420,16 +420,13 @@ export const getGeminiRankedRecommendations = async (candidateProfiles, userProf
             },
         });
 
-        console.log('Gemini response received');
         const responseText = response.text;
-        console.log('Raw response:', responseText);
         
         let rankedIds;
         try {
             rankedIds = JSON.parse(responseText);
         } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            console.error('Response text:', responseText);
+            // JSON parse error - using fallback
             // Try to extract JSON array from the response
             const jsonMatch = responseText.match(/\[.*\]/s);
             if (jsonMatch) {
@@ -440,16 +437,15 @@ export const getGeminiRankedRecommendations = async (candidateProfiles, userProf
         }
         
         if (Array.isArray(rankedIds)) {
-            console.log('Successfully parsed', rankedIds.length, 'ranked IDs');
+            // Successfully parsed ranked IDs
             return rankedIds;
         }
         
-        console.error('Response is not an array:', rankedIds);
+        // Response is not an array - using fallback
         return [];
 
     } catch (error) {
         console.error("Gemini Ranking API Error:", error);
-        console.error("Error details:", error.message, error.stack);
         // Fallback to local ordering so the UI keeps working
         return candidateProfiles.slice(0, 8).map(p => p.id);
     }

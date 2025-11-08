@@ -135,7 +135,15 @@ export const Hero = () => {
                 Find Your Match <ArrowRight className="w-5 h-5" />
               </Button>
               {/* Secondary/Outline Button */}
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const section = document.querySelector('#features');
+                  if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+              >
                 How Our AI Works
               </Button>
             </div>

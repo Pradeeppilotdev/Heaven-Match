@@ -1,5 +1,6 @@
+// Matchcard.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { HeartIcon as SolidHeart, MapPinIcon, BriefcaseIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as SolidHeart, MapPinIcon, BriefcaseIcon, XMarkIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 
 // Clean Heart Icon (for button)
 const HeartIcon = ({ className = "w-6 h-6", filled = false }) => (
@@ -26,7 +27,7 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
   const imageRef = useRef(null);
   const cardRef = useRef(null);
   // Accessing the new AI-enriched fields
-  const { name, age, location, image, profession, interests = [], bio, income, personality_tags } = profile;
+  const { name, age, location, image, profession, interests = [], bio, income, education, personality_tags } = profile;
 
   // Sync liked state when prop changes
   useEffect(() => {
@@ -134,11 +135,18 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
 
         <div className="p-4 space-y-3 flex flex-col flex-1 min-h-[280px] select-none" style={{ userSelect: 'none' }}>
           {/* Profession & Income */}
-          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium h-[1.75rem] select-none" style={{ userSelect: 'none' }}>
+          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium select-none" style={{ userSelect: 'none' }}>
             <span className="flex items-center gap-2 truncate select-none" style={{ userSelect: 'none' }}>
               <BriefcaseIcon className="w-4 h-4 text-pink-500 flex-shrink-0" />
               <span className="truncate select-none" style={{ userSelect: 'none' }}>{profession} ({income || 'N/A'})</span>
             </span>
+            {/* Education - shown below profession */}
+            {education && (
+              <span className="flex items-center gap-2 truncate text-xs text-gray-600 select-none" style={{ userSelect: 'none' }}>
+                <AcademicCapIcon className="w-3.5 h-3.5 text-pink-400 flex-shrink-0" />
+                <span className="truncate select-none" style={{ userSelect: 'none' }}>{education}</span>
+              </span>
+            )}
           </div>
 
           {/* Personality Tags/Bio Snippet - Minimum height for consistency */}
@@ -178,6 +186,7 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
               onClick={() => {
                 const becomingConnected = connectedProfileId !== profile.id;
                 if (becomingConnected && !contact) {
+                  // Generate masked contact details (already masked for display)
                   const rnd1 = Math.floor(1000 + Math.random() * 9000);
                   const rnd2 = Math.floor(1000 + Math.random() * 9000);
                   const phone = `+91 ${rnd1} ${rnd2}`;

@@ -1,3 +1,5 @@
+//recommendations
+
 import React, { useState, useEffect } from "react";
 import { mockProfiles } from "../data/mockUser";
 import { fetchProfiles } from "../services/api";
@@ -7,6 +9,13 @@ import Chatbot from "../components/Chatbot";
 import WelcomeModal from "../components/WelcomeModal";
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { checkRateLimit } from "../utils/rateLimiter";
+import { 
+  validateAndSanitizeProfiles, 
+  checkProfileViewLimit, 
+  detectSuspiciousActivity,
+  logSecurityEvent,
+  secureLocalStorage
+} from "../utils/security";
 
 // Loading messages and quotes
 const loadingMessages = [
@@ -37,8 +46,12 @@ export default function Recommendations() {
     return !cached;
   });
   const [profiles, setProfiles] = useState(() => {
-    const cached = localStorage.getItem('heavenMatch_profiles');
-    return cached ? JSON.parse(cached) : [];
+    const cached = secureLocalStorage.getItem('heavenMatch_profiles');
+    if (cached && Array.isArray(cached)) {
+      // Validate and sanitize cached profiles
+      return validateAndSanitizeProfiles(cached);
+    }
+    return [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -51,12 +64,12 @@ export default function Recommendations() {
   }); // 'mock' or 'chatbot'
   const [connectedProfileId, setConnectedProfileId] = useState(null);
   const [skippedProfiles, setSkippedProfiles] = useState(() => {
-    const cached = localStorage.getItem('heavenMatch_skippedProfiles');
-    return cached ? JSON.parse(cached) : [];
+    const cached = secureLocalStorage.getItem('heavenMatch_skippedProfiles');
+    return cached && Array.isArray(cached) ? validateAndSanitizeProfiles(cached) : [];
   });
   const [likedProfiles, setLikedProfiles] = useState(() => {
-    const cached = localStorage.getItem('heavenMatch_likedProfiles');
-    return cached ? JSON.parse(cached) : [];
+    const cached = secureLocalStorage.getItem('heavenMatch_likedProfiles');
+    return cached && Array.isArray(cached) ? validateAndSanitizeProfiles(cached) : [];
   });
   const [viewingProfile, setViewingProfile] = useState(null); // Track which profile is being viewed (liked or skipped)
   const [viewingProfileType, setViewingProfileType] = useState(null); // 'liked' or 'skipped'
@@ -94,11 +107,11 @@ export default function Recommendations() {
   }, [loading]);
 
   useEffect(() => {
-    const cached = localStorage.getItem('heavenMatch_profiles');
-    if (cached && JSON.parse(cached).length > 0 && !showWelcome) {
-      // Filter skipped profiles from cache when loading
-      const cachedProfiles = JSON.parse(cached);
-      const filteredProfiles = filterSkippedProfiles(cachedProfiles);
+    const cached = secureLocalStorage.getItem('heavenMatch_profiles');
+    if (cached && Array.isArray(cached) && cached.length > 0 && !showWelcome) {
+      // Validate, sanitize, and filter skipped profiles from cache when loading
+      const validatedProfiles = validateAndSanitizeProfiles(cached);
+      const filteredProfiles = filterSkippedProfiles(validatedProfiles);
       if (filteredProfiles.length > 0) {
         setProfiles(filteredProfiles);
         return; // Use cached data
@@ -110,25 +123,35 @@ export default function Recommendations() {
   }, [useRealData, showWelcome, skippedProfiles]);
 
   const loadProfiles = async (forceRefresh = false) => {
+    // Security: Detect suspicious activity
+    if (detectSuspiciousActivity('load_profiles')) {
+      setError('Suspicious activity detected. Please refresh the page and try again.');
+      setLoading(false);
+      logSecurityEvent('SUSPICIOUS_ACTIVITY_BLOCKED', { action: 'load_profiles' });
+      return;
+    }
+
     // Rate limiting check
     const rateLimitCheck = checkRateLimit('recommendations');
     if (!rateLimitCheck.allowed) {
       setError(`Rate limit exceeded. Please wait ${Math.ceil((rateLimitCheck.resetTime - Date.now()) / 1000)} seconds before refreshing.`);
       setLoading(false);
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', { type: 'recommendations' });
       return;
     }
 
     // Check cache first unless force refresh
     if (!forceRefresh) {
-      const cached = localStorage.getItem('heavenMatch_profiles');
-      const cacheTime = localStorage.getItem('heavenMatch_profiles_time');
+      const cached = secureLocalStorage.getItem('heavenMatch_profiles');
+      const cacheTime = secureLocalStorage.getItem('heavenMatch_profiles_time');
       if (cached && cacheTime) {
         const age = Date.now() - parseInt(cacheTime, 10);
         // Use cache if less than 5 minutes old
         if (age < 5 * 60 * 1000) {
-          const cachedProfiles = JSON.parse(cached);
+          // Validate and sanitize cached profiles
+          const validatedProfiles = validateAndSanitizeProfiles(cached);
           // Filter out skipped profiles from cache
-          const filteredProfiles = filterSkippedProfiles(cachedProfiles);
+          const filteredProfiles = filterSkippedProfiles(validatedProfiles);
           setProfiles(filteredProfiles);
           return;
         }
@@ -147,27 +170,33 @@ export default function Recommendations() {
     if (useRealData) {
         // When using mock user, explicitly pass null to use mockUserProfile default
         // When using chatbot data, it will be passed via handleQuestionnaireComplete
-        console.log('Loading profiles with AI ranking...');
         const data = await fetchProfiles(12, null);
-        console.log('Received profiles:', data.length, data);
         
       if (data.length > 0) {
+        // Validate and sanitize profiles before setting
+        const validatedData = validateAndSanitizeProfiles(data);
         // Filter out skipped profiles before setting
-        const filteredData = filterSkippedProfiles(data);
+        const filteredData = filterSkippedProfiles(validatedData);
         setProfiles(filteredData);
-          localStorage.setItem('heavenMatch_profiles', JSON.stringify(data));
-          localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
-          setError(null);
+        // Store with secure localStorage
+        secureLocalStorage.setItem('heavenMatch_profiles', data);
+        secureLocalStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
+        setError(null);
+        // Success message: Fetched recommendations using AI
+        console.log(`✅ Fetched ${filteredData.length} recommendations using AI`);
+        logSecurityEvent('PROFILES_LOADED', { count: filteredData.length });
       } else {
           throw new Error('No profiles returned from AI pipeline');
       }
     } else {
-        console.log('Using mock profiles (non-AI)');
+        // Validate and sanitize mock profiles
+        const validatedMockProfiles = validateAndSanitizeProfiles(mockProfiles);
         // Filter out skipped profiles from mock profiles
-        const filteredMockProfiles = filterSkippedProfiles(mockProfiles);
+        const filteredMockProfiles = filterSkippedProfiles(validatedMockProfiles);
         setProfiles(filteredMockProfiles);
-        localStorage.setItem('heavenMatch_profiles', JSON.stringify(mockProfiles));
-        localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
+        secureLocalStorage.setItem('heavenMatch_profiles', mockProfiles);
+        secureLocalStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
+        console.log(`✅ Fetched ${filteredMockProfiles.length} recommendations`);
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -180,36 +209,48 @@ export default function Recommendations() {
   };
 
   const handleInterest = (id, isLiked) => {
-    console.log(isLiked ? 'Liked profile:' : 'Unliked profile:', id);
+    // Security: Detect suspicious activity
+    if (detectSuspiciousActivity('like_profile')) {
+      logSecurityEvent('SUSPICIOUS_ACTIVITY_BLOCKED', { action: 'like_profile', profileId: id });
+      return;
+    }
+
     const profile = profiles.find(p => p.id === id) || skippedProfiles.find(p => p.id === id) || likedProfiles.find(p => p.id === id);
     
     if (isLiked && profile) {
       // Add to liked profiles
       const updatedLiked = [profile, ...likedProfiles.filter(p => p.id !== id)].slice(0, 50);
       setLikedProfiles(updatedLiked);
-      localStorage.setItem('heavenMatch_likedProfiles', JSON.stringify(updatedLiked));
+      secureLocalStorage.setItem('heavenMatch_likedProfiles', updatedLiked);
+      logSecurityEvent('PROFILE_LIKED', { profileId: id });
     } else {
       // Remove from liked profiles
       const updatedLiked = likedProfiles.filter(p => p.id !== id);
       setLikedProfiles(updatedLiked);
-      localStorage.setItem('heavenMatch_likedProfiles', JSON.stringify(updatedLiked));
+      secureLocalStorage.setItem('heavenMatch_likedProfiles', updatedLiked);
     }
   };
 
   const handleSkip = (id) => {
-    console.log('Skipped profile:', id);
+    // Security: Detect suspicious activity
+    if (detectSuspiciousActivity('skip_profile')) {
+      logSecurityEvent('SUSPICIOUS_ACTIVITY_BLOCKED', { action: 'skip_profile', profileId: id });
+      return;
+    }
+
     const skipped = profiles.find(p => p.id === id);
     setProfiles(profiles.filter(p => p.id !== id));
     if (skipped) {
       const updatedSkipped = [skipped, ...skippedProfiles.filter(p => p.id !== id)].slice(0, 50);
       setSkippedProfiles(updatedSkipped);
-      localStorage.setItem('heavenMatch_skippedProfiles', JSON.stringify(updatedSkipped));
+      secureLocalStorage.setItem('heavenMatch_skippedProfiles', updatedSkipped);
+      logSecurityEvent('PROFILE_SKIPPED', { profileId: id });
     }
     // Remove from liked if it was liked
     if (likedProfiles.some(p => p.id === id)) {
       const updatedLiked = likedProfiles.filter(p => p.id !== id);
       setLikedProfiles(updatedLiked);
-      localStorage.setItem('heavenMatch_likedProfiles', JSON.stringify(updatedLiked));
+      secureLocalStorage.setItem('heavenMatch_likedProfiles', updatedLiked);
     }
     if (connectedProfileId === id) setConnectedProfileId(null);
   };
@@ -217,9 +258,11 @@ export default function Recommendations() {
   const handleUndoSkip = (id) => {
     const profile = skippedProfiles.find(p => p.id === id);
     if (profile) {
-      setSkippedProfiles(prev => prev.filter(p => p.id !== id));
-      localStorage.setItem('heavenMatch_skippedProfiles', JSON.stringify(skippedProfiles.filter(p => p.id !== id)));
+      const updatedSkipped = skippedProfiles.filter(p => p.id !== id);
+      setSkippedProfiles(updatedSkipped);
+      secureLocalStorage.setItem('heavenMatch_skippedProfiles', updatedSkipped);
       setProfiles(prev => [profile, ...prev]);
+      logSecurityEvent('PROFILE_UNSKIPPED', { profileId: id });
     }
   };
 
@@ -246,6 +289,24 @@ export default function Recommendations() {
   // Filter handler removed
 
   const handleToggleConnect = (id) => {
+    // Security: Check profile view limit
+    if (id && id !== connectedProfileId) {
+      const viewCheck = checkProfileViewLimit(id);
+      if (!viewCheck.allowed) {
+        setError(viewCheck.message || 'Profile view limit reached. Please try again later.');
+        logSecurityEvent('PROFILE_VIEW_LIMIT_EXCEEDED', { profileId: id });
+        return;
+      }
+      
+      // Security: Detect suspicious activity
+      if (detectSuspiciousActivity('view_contact')) {
+        logSecurityEvent('SUSPICIOUS_ACTIVITY_BLOCKED', { action: 'view_contact', profileId: id });
+        return;
+      }
+      
+      logSecurityEvent('PROFILE_CONTACT_VIEWED', { profileId: id });
+    }
+    
     setConnectedProfileId(prev => (prev === id ? null : id));
   };
 
@@ -285,28 +346,41 @@ export default function Recommendations() {
   const handleQuestionnaireComplete = async (userData, recommendations) => {
     setLoading(true);
     try {
+      // Security: Detect suspicious activity
+      if (detectSuspiciousActivity('questionnaire_complete')) {
+        setError('Suspicious activity detected. Please try again.');
+        setLoading(false);
+        logSecurityEvent('SUSPICIOUS_ACTIVITY_BLOCKED', { action: 'questionnaire_complete' });
+        return;
+      }
+
       // If recommendations are provided, use them; otherwise generate them
       let profilesToSet = [];
       if (recommendations && recommendations.length > 0) {
         profilesToSet = recommendations;
-        localStorage.setItem('heavenMatch_profiles', JSON.stringify(recommendations));
-        localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
+        secureLocalStorage.setItem('heavenMatch_profiles', recommendations);
+        secureLocalStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
       } else {
         // Generate recommendations from user data
         const { generateRecommendationsFromUserData } = await import('../services/api');
         const generatedProfiles = await generateRecommendationsFromUserData(userData);
         profilesToSet = generatedProfiles;
-        localStorage.setItem('heavenMatch_profiles', JSON.stringify(generatedProfiles));
-        localStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
+        secureLocalStorage.setItem('heavenMatch_profiles', generatedProfiles);
+        secureLocalStorage.setItem('heavenMatch_profiles_time', Date.now().toString());
       }
-      // Filter out skipped profiles before setting
-      const filteredProfiles = filterSkippedProfiles(profilesToSet);
+      // Validate, sanitize, and filter out skipped profiles before setting
+      const validatedProfiles = validateAndSanitizeProfiles(profilesToSet);
+      const filteredProfiles = filterSkippedProfiles(validatedProfiles);
       setProfiles(filteredProfiles);
       setError(null);
+      // Success message: Fetched recommendations using AI
+      console.log(`✅ Fetched ${filteredProfiles.length} recommendations using AI`);
+      logSecurityEvent('QUESTIONNAIRE_COMPLETED', { profileCount: filteredProfiles.length });
     } catch (error) {
       console.error('Error in handleQuestionnaireComplete:', error);
       setError(`Failed to load recommendations: ${error.message}`);
       setProfiles([]);
+      logSecurityEvent('QUESTIONNAIRE_ERROR', { error: error.message });
     } finally {
       setLoading(false);
       setChatbotMode('conversation'); // Switch back to conversation mode after completion
@@ -328,10 +402,10 @@ export default function Recommendations() {
   
   useEffect(() => {
     // Track honeypot interactions
-    if (honeypotTriggered) {
-      console.warn('Bot detected: Honeypot triggered');
-      // In production, send this to analytics/security service
-    }
+      if (honeypotTriggered) {
+        console.warn('Bot detected: Honeypot triggered');
+        // In production, send this to analytics/security service
+      }
   }, [honeypotTriggered]);
 
   return (

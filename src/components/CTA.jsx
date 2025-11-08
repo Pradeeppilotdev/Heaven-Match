@@ -48,7 +48,15 @@ const CTA = () => {
               >
                 Register Now - It's Free
               </button>
-              <button className="border-2 border-white text-white hover:bg-white/10 px-8 py-4 rounded-lg font-bold text-lg transition-all">
+              <button
+                className="border-2 border-white text-white hover:bg-white/10 px-8 py-4 rounded-lg font-bold text-lg transition-all"
+                onClick={() => {
+                  const section = document.querySelector('#testimonials');
+                  if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+              >
                 View Success Stories
               </button>
             </div>
