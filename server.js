@@ -1,13 +1,4 @@
-app.get('/api/generate-token', (req, res) => {
-  const token = generateFormToken(req);
-  const honeypot = generateHoneypotHTML();
 
-  res.json({
-    token,
-    honeypot,
-    message: 'Token generated successfully'
-  });
-});
 
 const express = require('express');
 const cors = require('cors');
@@ -20,7 +11,16 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+app.get('/api/generate-token', (req, res) => {
+  const token = generateFormToken(req);
+  const honeypot = generateHoneypotHTML();
 
+  res.json({
+    token,
+    honeypot,
+    message: 'Token generated successfully'
+  });
+});
 // AI Provider Configuration - Single API Key for all features
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openrouter'; // 'openrouter', 'openai', 'huggingface'
 const AI_API_KEY = process.env.REACT_APP_AI_API_KEY || process.env.REACT_APP_HF_API_TOKEN;

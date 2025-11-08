@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Wand2, Sparkles, Loader2 } from 'lucide-react';
 import Card from './Card'; 
 import Button from './Button';
-// We are not using Headless UI, so no extra imports are needed.
+import { fetchWithRetry, apiQueue, handleAPIError } from './apiUtils';
 
 /**
  * Renders an interactive demo for the AI Icebreaker feature, fetching content from the Gemini API.
@@ -15,23 +15,26 @@ export const AIIcebreakerDemo = () => {
   const [icebreakers, setIcebreakers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [requestCount, setRequestCount] = useState(0);
 
   const topics = ['Travel', 'Food', 'Movies', 'Music', 'Hobbies'];
 
   /**
    * Asynchronously calls the Gemini API to generate new icebreakers based on the current topic.
+   * UPDATED: Now includes retry logic, request queuing, and better error handling
+   * UPDATED: Allows multiple rapid clicks - each request is queued
    */
   const generateIcebreakers = async () => {
+    const currentRequest = requestCount + 1;
+    setRequestCount(currentRequest);
     setLoading(true);
     setError(null);
-    setIcebreakers([]); 
 
-    // --- FIX 1: Access the API key using Vite's `import.meta.env` ---
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
     // Critical API Key Validation with graceful local fallback
     if (!apiKey) {
-      console.error("VITE_GEMINI_API_KEY is not configured.");
+      console.error("REACT_APP_GEMINI_API_KEY is not configured.");
       const local = [
         `What was your favorite ${selectedTopic.toLowerCase()} memory and why?`,
         `Two truths and a lie about ${selectedTopic.toLowerCase()} – I'll guess!`,
@@ -40,12 +43,13 @@ export const AIIcebreakerDemo = () => {
       setIcebreakers(local);
       setError("API key not set. Showing mock data.");
       setLoading(false);
+      setRequestCount(0);
       return;
     }
 
-    // --- FIX 2: Use a stable model name and standard fetch ---
-    // Using the 'gemini-1.5-flash' model from your `ai.js` file
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // FIX: Using gemini-2.0-flash-exp model (correct endpoint)
+    // Changed from gemini-1.5-flash which was causing 404 errors
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
     
     const prompt = `
       You are a fun, friendly dating assistant for 'Heaven Match'. 
@@ -65,18 +69,20 @@ export const AIIcebreakerDemo = () => {
     };
 
     try {
-      // --- FIX 3: Replaced `callGeminiAPI` with a standard `fetch` call ---
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      // UPDATED: Using apiQueue to prevent rate limiting
+      const result = await apiQueue.add(async () => {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        return await response.json();
       });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
       
       // Check for empty or malformed response
       if (!result.candidates || !result.candidates[0].content.parts[0].text) {
@@ -89,21 +95,30 @@ export const AIIcebreakerDemo = () => {
 
     } catch (err) {
       console.error("Failed to generate icebreakers:", err);
-      // --- FIX 4: Replaced `getErrorMessage` with a user-friendly string ---
-      setError("Sorry, the AI is a bit shy right now. Please try again.");
-      // You can also add mock data here as a fallback
+      
+      // UPDATED: Using handleAPIError for consistent error messages
+      const errorInfo = handleAPIError(err, 'generating icebreakers');
+      setError(errorInfo.error);
+      
+      // Fallback to mock data
       const local = [
         `If you could only eat one ${selectedTopic.toLowerCase()} for a year, what would it be?`,
         `What's your most controversial ${selectedTopic.toLowerCase()} opinion?`,
       ];
       setIcebreakers(local);
     } finally {
-      setLoading(false);
+      // Only turn off loading if this was the last request
+      setRequestCount(prev => {
+        const newCount = prev - 1;
+        if (newCount === 0) {
+          setLoading(false);
+        }
+        return newCount;
+      });
     }
   };
 
   return (
-    // Reverted to the styling from your code snippet
     <Card className="p-6" hover={false}>
       <div className="flex flex-col h-full">
         {/* Icon */}
@@ -123,11 +138,9 @@ export const AIIcebreakerDemo = () => {
         <div className="space-y-3 flex-1 flex flex-col">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1.5">Topic</label>
-            {/* Kept the standard <select> as requested */}
             <select
               value={selectedTopic}
               onChange={(e) => setSelectedTopic(e.target.value)}
-              disabled={loading}
               className="w-full p-2.5 border border-[#E5E7EB] rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#D81B60] focus:border-[#D81B60] text-sm shadow-sm hover:shadow-md transition-all duration-300"
             >
               {topics.map(topic => (
@@ -138,15 +151,19 @@ export const AIIcebreakerDemo = () => {
           
           <Button
             onClick={generateIcebreakers}
-            disabled={loading}
             className="w-full"
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Generating... {requestCount > 1 ? `(${requestCount} queued)` : ''}</span>
+              </>
             ) : (
-              <Sparkles className="w-5 h-5" />
+              <>
+                <Sparkles className="w-5 h-5" />
+                <span>Generate Icebreakers</span>
+              </>
             )}
-            <span>{loading ? 'Generating...' : 'Generate Icebreakers'}</span>
           </Button>
           
           {/* Results Display - Scrolling text area */}

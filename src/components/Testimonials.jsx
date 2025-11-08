@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// Import icons for UI elements, navigation, ratings, and content generation.
 import { Quote, Star, User, ChevronLeft, ChevronRight, RefreshCw, Loader2 } from 'lucide-react';
-
+import { fetchWithRetry, apiQueue, apiCache, handleAPIError } from './UI/apiUtils';
 
 // Simple wrapper component for consistent styling and hover effects.
 const Card = ({ children, className = '' }) => (
@@ -12,19 +11,14 @@ const Card = ({ children, className = '' }) => (
 
 /**
  * Renders an individual testimonial card.
- * @param {Object} props - Component props.
- * @param {Object} props.testimonial - The testimonial data object (story, name, location, imageQuery).
- * @param {number} props.index - The global index used to ensure unique placeholder images.
  */
 const TestimonialCard = ({ testimonial, index }) => {
-    // State to handle fallback if the random Unsplash image fails to load.
     const [imageError, setImageError] = useState(false);
 
     return (
         <Card className="hover:shadow-2xl hover:shadow-pink-300/50 transform hover:scale-[1.02] transition duration-300 ease-in-out">
             <div className="space-y-4">
                 <Quote className="w-10 h-10 text-pink-300" />
-                {/* 5-star rating display */}
                 <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-5 h-5 fill-pink-500 text-pink-500" />
@@ -32,21 +26,18 @@ const TestimonialCard = ({ testimonial, index }) => {
                 </div>
                 <p className="text-gray-700 italic">"{testimonial.story}"</p>
                 
-                {/* Couple profile section */}
                 <div className="flex items-center gap-4 pt-4 border-t border-pink-100">
                     <div className="w-12 h-12 rounded-full flex-shrink-0">
                         {imageError ? (
-                            // Fallback UI if image loading fails (e.g., Unsplash error).
                             <div className="w-full h-full rounded-full bg-pink-100 flex items-center justify-center border-2 border-pink-200">
                                 <User className="w-6 h-6 text-pink-500" />
                             </div>
                         ) : (
                             <img
-                                // Generates a random image based on the AI-provided query. 't' parameter forces refresh.
                                 src={`https://source.unsplash.com/random/400x400/?${encodeURIComponent(testimonial.imageQuery)}&t=${index}`}
                                 alt={testimonial.coupleName}
                                 className="w-12 h-12 rounded-full object-cover border-2 border-pink-200"
-                                onError={() => setImageError(true)} // Sets error state on failure.
+                                onError={() => setImageError(true)}
                             />
                         )}
                     </div>
@@ -63,29 +54,29 @@ const TestimonialCard = ({ testimonial, index }) => {
 /**
  * Main Testimonials section component. Fetches structured success stories from the Gemini API 
  * and displays them in a paginated carousel/grid.
+ * UPDATED: Now includes rate limiting protection, caching, and retry logic
  */
 export const Testimonials = () => {
-    // State to track the currently visible group of testimonials (0, 1, or 2).
     const [currentIndex, setCurrentIndex] = useState(0);
-    // State holding the array of 9 generated testimonial objects.
     const [displayedTestimonials, setDisplayedTestimonials] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    // Flag to manage initial loading state vs. subsequent reloads.
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const STORIES_PER_PAGE = 3;
     const TOTAL_PAGES = 3;
-    const TOTAL_DISPLAYED = STORIES_PER_PAGE * TOTAL_PAGES; // Total of 9 stories requested from the API.
+    const TOTAL_DISPLAYED = STORIES_PER_PAGE * TOTAL_PAGES;
     
     /**
      * Calls the Gemini API to generate a structured JSON array of unique success stories.
+     * UPDATED: Now uses apiQueue, caching, and retry logic to handle rate limiting
      */
-    const generateTestimonials = async () => {
+    const generateTestimonials = async (forceRefresh = false) => {
         setLoading(true);
         setError(null);
 
         const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+        
         // Configuration check with local fallback
         if (!apiKey) {
             const local = Array.from({ length: TOTAL_DISPLAYED }).map((_, i) => ({
@@ -103,7 +94,6 @@ export const Testimonials = () => {
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
         
-        // Detailed prompt requiring 9 unique stories with specific formatting and content diversity.
         const prompt = `
 You are creating success stories for "Heaven Match", an AI-powered Indian dating platform.
 
@@ -128,7 +118,6 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
                 responseMimeType: "application/json",
-                // Strict schema definition to ensure reliable JSON parsing of the 9 objects.
                 responseSchema: {
                     type: "ARRAY",
                     items: {
@@ -146,58 +135,78 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
         };
 
         try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            const cacheKey = 'testimonials-main';
+            
+            // If force refresh, clear the cache
+            if (forceRefresh) {
+                apiCache.clear(cacheKey);
             }
 
-            const result = await response.json();
+            // UPDATED: Using apiCache and apiQueue to prevent rate limiting
+            const result = await apiCache.getOrFetch(
+                cacheKey,
+                async () => {
+                    return await apiQueue.add(async () => {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`API error: ${response.status}`);
+                        }
+
+                        return await response.json();
+                    });
+                },
+                600000 // Cache for 10 minutes (longer than others since testimonials don't change often)
+            );
+
             const jsonText = result.candidates[0].content.parts[0].text;
             const parsedTestimonials = JSON.parse(jsonText);
             
-            // Slice the result to ensure only the expected number of stories is displayed.
             if (parsedTestimonials.length >= TOTAL_DISPLAYED) {
                 setDisplayedTestimonials(parsedTestimonials.slice(0, TOTAL_DISPLAYED));
             } else {
                 setDisplayedTestimonials(parsedTestimonials);
             }
             
-            setCurrentIndex(0); // Reset to the first page on new data load.
+            setCurrentIndex(0);
             setIsInitialLoad(false);
 
         } catch (err) {
             console.error("Failed to generate testimonials:", err);
-            setError("Unable to load success stories. Please try again.");
+            
+            // UPDATED: Using handleAPIError for consistent error messages
+            const errorInfo = handleAPIError(err, 'generating testimonials');
+            setError(errorInfo.error);
         } finally {
             setLoading(false);
         }
     };
 
     // Initial data load on component mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         generateTestimonials();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
     /** Handlers for pagination. */
     const nextGroup = () => {
-        // Cycles forward (0 -> 1 -> 2 -> 0).
         setCurrentIndex((prevIndex) => (prevIndex + 1) % TOTAL_PAGES);
     };
 
     const prevGroup = () => {
-        // Cycles backward (0 -> 2 -> 1 -> 0).
         setCurrentIndex((prevIndex) => (prevIndex - 1 + TOTAL_PAGES) % TOTAL_PAGES);
     };
 
-    // Calculates the starting index for the current view (0, 3, or 6).
+    /** Handle manual refresh - clears cache and generates new data */
+    const handleRefresh = () => {
+        generateTestimonials(true); // Pass true to force refresh
+    };
+
     const start = currentIndex * STORIES_PER_PAGE;
-    // Slices the data array to show only the 3 testimonials for the current page.
     const currentStories = displayedTestimonials.slice(start, start + STORIES_PER_PAGE);
 
     return (
@@ -206,9 +215,8 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
                 <div className="text-center mb-16 space-y-4">
                     <div className="flex items-center justify-center gap-3">
                         <h2 className="text-3xl md:text-5xl font-bold text-gray-900">Real Stories, Real Love ✨</h2>
-                        {/* Manual refresh button to trigger new AI generation */}
                         <button
-                            onClick={generateTestimonials}
+                            onClick={handleRefresh}
                             disabled={loading}
                             className="p-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition disabled:bg-pink-300 disabled:cursor-not-allowed"
                             title="Generate new stories"
@@ -231,7 +239,7 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
                     <div className="text-center mb-8">
                         <p className="text-red-500 mb-4">{error}</p>
                         <button
-                            onClick={generateTestimonials}
+                            onClick={handleRefresh}
                             className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition"
                         >
                             Try Again
@@ -247,25 +255,21 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
                     </div>
                 )}
 
-                
                 {/* Testimonial Display Grid and Pagination */}
                 {!isInitialLoad && !loading && displayedTestimonials.length > 0 && (
                     <div className="relative">
-                        {/* Grid for 3 cards per page */}
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {currentStories.map((testimonial, index) => (
                                 <TestimonialCard 
-                                    // Key combines start index and card index for stability.
                                     key={`${start}-${index}`} 
                                     testimonial={testimonial} 
-                                    index={start + index} // Pass global index for unique image generation.
+                                    index={start + index}
                                 />
                             ))}
                         </div>
 
                         {/* Pagination Controls */}
                         <div className="mt-12 flex justify-center items-center space-x-4">
-                            {/* Previous button */}
                             <button
                                 onClick={prevGroup}
                                 className="p-3 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition disabled:bg-pink-300"
@@ -274,7 +278,6 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
                                 <ChevronLeft className="w-6 h-6" />
                             </button>
 
-                            {/* Page dots indicator */}
                             <div className="flex space-x-2">
                                 {[...Array(TOTAL_PAGES)].map((_, index) => (
                                     <button
@@ -288,7 +291,6 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
                                 ))}
                             </div>
 
-                            {/* Next button */}
                             <button
                                 onClick={nextGroup}
                                 className="p-3 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition disabled:bg-pink-300"
@@ -305,3 +307,15 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
 };
 
 export default Testimonials;
+
+/**
+ * KEY CHANGES MADE:
+ * 
+ * 1.  Added apiQueue to prevent 429 rate limiting errors
+ * 2.  Added apiCache to reduce redundant API calls (10 minute cache)
+ * 3.  Requests are automatically retried with exponential backoff
+ * 4.  Added handleAPIError for consistent error messaging
+ * 5.  Requests are queued with minimum 1.5 second spacing
+ * 6.  Better error handling with user-friendly messages
+ * 7.  Cache can be cleared with the refresh button (forceRefresh parameter)
+ */

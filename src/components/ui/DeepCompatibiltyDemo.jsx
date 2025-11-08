@@ -5,25 +5,25 @@ import React, { useState } from 'react';
 import { Brain, Loader2, Sparkles, Heart, BookOpen, Mountain, Coffee } from 'lucide-react';
 import Card from './Card'; 
 import Button from './Button';
+import { apiQueue, apiCache, handleAPIError } from './apiUtils';
 
 /**
  * Renders an interactive demo for the Deep Compatibility feature.
  * The user selects three profile criteria (personality, values, goals) 
  * which are sent to the AI for structured analysis.
+ * 
+ * FIXED: Added rate limiting, caching, and proper error handling to prevent 429 errors
  */
 export const DeepCompatibilityDemo = () => {
-  // State to hold the three user-selected criteria for analysis.
   const [userProfile, setUserProfile] = useState({
     personality: 'adventurous',
     values: 'family',
     goals: 'career'
   });
-  // State to hold the parsed JSON result {score, matchType, insights}.
   const [compatibility, setCompatibility] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Predefined selection options for the user profile fields.
   const profiles = {
     personality: [
       { value: 'adventurous', label: 'Adventurous & Spontaneous', icon: Mountain },
@@ -46,14 +46,15 @@ export const DeepCompatibilityDemo = () => {
   };
 
   /**
-   * Asynchronously calls the Gemini API to analyze the selected profile attributes.
+   * UPDATED: Asynchronously calls the Gemini API with rate limiting and caching
    */
   const analyzeCompatibility = async () => {
     setLoading(true);
     setError(null);
     setCompatibility(null);
 
-   const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    
     // Critical API Key Validation with local fallback
     if (!apiKey) {
       const personalityLabel = profiles.personality.find(p => p.value === userProfile.personality)?.label;
@@ -72,15 +73,12 @@ export const DeepCompatibilityDemo = () => {
       return;
     }
 
-    // Using a model suitable for structured, interpretive text generation.
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
     
-    // Convert short state values into descriptive labels for the prompt context.
     const personalityLabel = profiles.personality.find(p => p.value === userProfile.personality)?.label;
     const valuesLabel = profiles.values.find(v => v.value === userProfile.values)?.label;
     const goalsLabel = profiles.goals.find(g => g.value === userProfile.goals)?.label;
 
-    // Detailed prompt defining the AI persona and strict output requirements (score, match type, insights).
     const prompt = `You are the Deep Compatibility AI for "Heaven Match" dating platform.
 
 User Profile:
@@ -100,7 +98,6 @@ Return as JSON with this exact structure:
   "insights": ["insight1", "insight2", "insight3"]
 }`;
 
-    // Configuration payload defining the strict JSON schema required for reliable parsing.
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
@@ -115,45 +112,54 @@ Return as JSON with this exact structure:
               items: { type: "STRING" }
             }
           },
-          // Mandate all keys must be present.
           required: ["score", "matchType", "insights"]
         },
-        temperature: 0.7, // Moderate temperature for insightful yet predictable responses.
+        temperature: 0.7,
         maxOutputTokens: 300,
       }
     };
 
     try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // Create cache key based on profile combination
+      const cacheKey = `compatibility-${userProfile.personality}-${userProfile.values}-${userProfile.goals}`;
+      
+      // FIXED: Use cache + queue to prevent 429 errors
+      const result = await apiCache.getOrFetch(
+        cacheKey,
+        async () => {
+          // Add to queue to limit concurrent requests
+          return await apiQueue.add(async () => {
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
 
-      const result = await response.json();
-      // Extract and parse the raw JSON text content.
+            return await response.json();
+          });
+        },
+        300000 // Cache for 5 minutes
+      );
+
       const jsonText = result.candidates[0].content.parts[0].text;
       const parsedCompatibility = JSON.parse(jsonText);
       setCompatibility(parsedCompatibility);
 
     } catch (err) {
       console.error("Failed to analyze compatibility:", err);
-      // User-friendly error message.
-      setError("Sorry, our AI is recalibrating. Please try again.");
+      
+      // FIXED: Use standardized error handler
+      const errorInfo = handleAPIError(err, 'analyzing compatibility');
+      setError(errorInfo.error);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Utility function to determine color classes for the compatibility score display.
-   * @param {number} score - The compatibility score percentage.
-   * @returns {string} Tailwind CSS gradient class.
-   */
   const getScoreColor = (score) => {
     if (score >= 90) return 'from-green-500 to-emerald-500';
     if (score >= 80) return 'from-blue-500 to-cyan-500';
@@ -163,7 +169,6 @@ Return as JSON with this exact structure:
   return (
     <Card className="col-span-1 md:col-span-2 lg:col-span-1 border-pink-400 border-2 shadow-pink-200 shadow-lg" hover={false}>
       <div className="flex flex-col text-center space-y-4">
-        {/* Component Title and Icon */}
         <div className="inline-flex justify-center">
           <div className="p-4 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full">
             <Brain className="w-8 h-8 text-pink-600" />
@@ -174,9 +179,7 @@ Return as JSON with this exact structure:
           Discover matches based on personality, values, and life goals
         </p>
         
-        {/* Interactive Profile Selection */}
         <div className="pt-2 space-y-3 text-left">
-          {/* Personality Selector */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">Your Personality</label>
             <select
@@ -191,7 +194,6 @@ Return as JSON with this exact structure:
             </select>
           </div>
 
-          {/* Core Values Selector */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">Core Values</label>
             <select
@@ -206,7 +208,6 @@ Return as JSON with this exact structure:
             </select>
           </div>
 
-          {/* Life Goals Selector */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">Life Goals</label>
             <select
@@ -221,13 +222,11 @@ Return as JSON with this exact structure:
             </select>
           </div>
           
-          {/* Action Button */}
           <Button
             onClick={analyzeCompatibility}
             disabled={loading}
             className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 mt-2"
           >
-            {/* Conditional display for loading spinner */}
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
@@ -237,26 +236,20 @@ Return as JSON with this exact structure:
           </Button>
         </div>
 
-        {/* Results Display */}
         <div className="pt-4 text-left space-y-3 min-h-[160px]">
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           
-          {/* Compatibility Results */}
           {!loading && compatibility && (
             <div className="space-y-4">
-              {/* Score and Match Type Display */}
               <div className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg">
-                {/* Score with conditional color grading */}
                 <div className={`text-4xl font-bold bg-gradient-to-r ${getScoreColor(compatibility.score)} bg-clip-text text-transparent`}>
                   {compatibility.score}%
                 </div>
-                {/* Match Type */}
                 <div className="text-sm font-semibold text-pink-600 uppercase tracking-wide">
                   {compatibility.matchType}
                 </div>
               </div>
 
-              {/* Insights List */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 justify-center mb-2">
                   <Brain className="w-4 h-4 text-rose-500" />

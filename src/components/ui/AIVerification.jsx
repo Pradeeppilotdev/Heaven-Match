@@ -4,20 +4,20 @@ import React, { useState } from 'react';
 import { Shield, Loader2, Sparkles, CheckCircle, User, Camera, FileText } from 'lucide-react';
 import Card from './Card'; 
 import Button from './Button';
+import { apiQueue, apiCache, handleAPIError } from './apiUtils';
 
 /**
  * Renders an interactive demo for AI Profile Verification.
  * Uses the Gemini API to analyze a selected profile status and return a structured JSON verification report.
+ * 
+ * FIXED: Added rate limiting, caching, and proper error handling to prevent 429 errors
  */
-export const AIVerificationDemo = () => {
-  // State for the selected simulated profile type (e.g., 'complete', 'suspicious').
+export const AIVerification = () => {
   const [selectedProfile, setSelectedProfile] = useState('complete');
-  // State to hold the parsed JSON verification object {trustScore, status, checks}.
   const [verification, setVerification] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Predefined profile scenarios for demonstration purposes.
   const profiles = [
     { 
       value: 'complete', 
@@ -42,7 +42,7 @@ export const AIVerificationDemo = () => {
   ];
 
   /**
-   * Asynchronously calls the Gemini API to run a profile verification simulation.
+   * UPDATED: Asynchronously calls the Gemini API with rate limiting and caching
    */
   const verifyProfile = async () => {
     setLoading(true);
@@ -50,6 +50,7 @@ export const AIVerificationDemo = () => {
     setVerification(null);
 
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    
     // Critical API Key Validation with local fallback
     if (!apiKey) {
       const profileLabel = profiles.find(p => p.value === selectedProfile)?.label;
@@ -66,13 +67,10 @@ export const AIVerificationDemo = () => {
       return;
     }
 
-    // Using a suitable model for fast, structured generation.
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
     
-    // Retrieve the user-facing label for use in the prompt.
     const profileLabel = profiles.find(p => p.value === selectedProfile)?.label;
 
-    // Highly structured system prompt for the verification AI persona.
     const prompt = `You are the AI Verification System for "Heaven Match" dating platform.
 
 Profile to verify: "${profileLabel}"
@@ -91,87 +89,86 @@ Return as JSON with this exact structure:
 
 Make checks sound professional and security-focused.`;
 
-    // Configuration payload defining the strict JSON structure required from the AI.
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        // Enforce JSON output.
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
           properties: {
-            trustScore: { type: "INTEGER" }, // Ensure Trust Score is a number.
+            trustScore: { type: "INTEGER" },
             status: { type: "STRING" },
-            checks: { // Checks must be an array of strings.
+            checks: {
               type: "ARRAY",
               items: { type: "STRING" }
             }
           },
-          // Mandate all keys must be present in the output.
           required: ["trustScore", "status", "checks"]
         },
-        temperature: 0.6, // Lower temperature promotes more predictable, factual-sounding outputs.
-        maxOutputTokens: 300, 
+        temperature: 0.6,
+        maxOutputTokens: 300,
       }
     };
 
     try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // Create cache key based on profile type
+      const cacheKey = `verification-${selectedProfile}`;
+      
+      // FIXED: Use cache + queue to prevent 429 errors
+      const result = await apiCache.getOrFetch(
+        cacheKey,
+        async () => {
+          // Add to queue to limit concurrent requests
+          return await apiQueue.add(async () => {
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
 
-      const result = await response.json();
-      // Extract the raw JSON text from the nested response.
+            return await response.json();
+          });
+        },
+        300000 // Cache for 5 minutes
+      );
+
       const jsonText = result.candidates[0].content.parts[0].text;
       const parsedVerification = JSON.parse(jsonText);
       setVerification(parsedVerification);
 
     } catch (err) {
       console.error("Failed to verify profile:", err);
-      // User-friendly error message for the UI.
-      setError("Sorry, our verification system is updating. Please try again.");
+      
+      // FIXED: Use standardized error handler
+      const errorInfo = handleAPIError(err, 'verifying profile');
+      setError(errorInfo.error);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Utility function to determine color classes based on verification status.
-   * @param {string} status - The verification status ("Verified", "Warning", etc.).
-   * @returns {Object} Tailwind CSS classes for background, text, and badge colors.
-   */
   const getStatusColor = (status) => {
     if (status === "Verified") return { bg: 'from-green-500 to-emerald-500', text: 'text-green-600', badge: 'bg-green-100 text-green-700' };
     if (status === "Warning") return { bg: 'from-red-500 to-orange-500', text: 'text-red-600', badge: 'bg-red-100 text-red-700' };
-    // Default for "Needs Review" or other states.
     return { bg: 'from-yellow-500 to-amber-500', text: 'text-yellow-600', badge: 'bg-yellow-100 text-yellow-700' };
   };
 
-  /**
-   * Utility function to determine color classes for the trust score display.
-   * @param {number} score - The trust score percentage.
-   * @returns {string} Tailwind CSS gradient class.
-   */
   const getScoreColor = (score) => {
     if (score >= 85) return 'from-green-500 to-emerald-500';
     if (score >= 70) return 'from-yellow-500 to-amber-500';
     return 'from-red-500 to-orange-500';
   };
 
-  // Dynamically select the icon for display in the results.
   const selectedIcon = profiles.find(p => p.value === selectedProfile)?.icon || Shield;
   const SelectedIcon = selectedIcon;
 
   return (
     <Card className="col-span-1 md:col-span-2 lg:col-span-1 border-pink-400 border-2 shadow-rose-200 shadow-lg" hover={false}>
       <div className="flex flex-col text-center space-y-4">
-        {/* Component Title and Icon */}
         <div className="inline-flex justify-center">
           <div className="p-4 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full">
             <Shield className="w-8 h-8 text-pink-600" />
@@ -182,7 +179,6 @@ Make checks sound professional and security-focused.`;
           Advanced AI ensures authentic profiles and community safety
         </p>
         
-        {/* Profile Selection and Action Button */}
         <div className="pt-2 space-y-4">
           <select
             value={selectedProfile}
@@ -200,7 +196,6 @@ Make checks sound professional and security-focused.`;
             disabled={loading}
             className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
           >
-            {/* Conditional display for loading spinner */}
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
@@ -210,20 +205,15 @@ Make checks sound professional and security-focused.`;
           </Button>
         </div>
 
-        {/* Results Display Area */}
         <div className="pt-4 text-left space-y-3 min-h-[160px]">
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           
-          {/* Detailed Verification Results */}
           {!loading && verification && (
             <div className="space-y-4">
-              {/* Status and Score Display */}
               <div className="flex flex-col items-center gap-3 p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg">
-                {/* Verification Status Badge */}
                 <div className={`inline-flex px-4 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(verification.status).badge}`}>
                   {verification.status}
                 </div>
-                {/* Trust Score Display with gradient color coding */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-600">Trust Score:</span>
                   <span className={`text-3xl font-bold bg-gradient-to-r ${getScoreColor(verification.trustScore)} bg-clip-text text-transparent`}>
@@ -232,7 +222,6 @@ Make checks sound professional and security-focused.`;
                 </div>
               </div>
 
-              {/* Verification Checks List */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 justify-center mb-2">
                   <SelectedIcon className="w-4 h-4 text-pink-500" />
@@ -257,4 +246,4 @@ Make checks sound professional and security-focused.`;
   );
 };
 
-export default AIVerificationDemo;
+export default AIVerification;
