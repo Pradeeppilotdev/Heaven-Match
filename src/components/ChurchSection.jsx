@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, User, MapPin, Heart } from 'lucide-react';
+import profile1 from '../public/images/profiles/1.png';
+import profile2 from '../public/images/profiles/2.png';
+import profile3 from '../public/images/profiles/3.png';
+import profile4 from '../public/images/profiles/4.png';
+import profile5 from '../public/images/profiles/5.png';
+import profile6 from '../public/images/profiles/6.png';
+import profile7 from '../public/images/profiles/7.png';
+import profile8 from '../public/images/profiles/8.png';
+import profile9 from '../public/images/profiles/9.png';
+import profile10 from '../public/images/profiles/10.png';
+import profile11 from '../public/images/profiles/11.png';
+import profile12 from '../public/images/profiles/12.png';
+import profile13 from '../public/images/profiles/13.png';
+import profile14 from '../public/images/profiles/14.png';
+import profile15 from '../public/images/profiles/15.png';
 
 // --- Data for all communities ---
 const communities = {
@@ -10,9 +25,9 @@ const communities = {
     buttonColor: 'bg-orange-600',
     buttonHover: 'hover:bg-orange-500',
     profiles: [
-      { id: 'd1', name: 'Rohan & Priya', age: 'Matched!', location: 'Mumbai', tag: 'Shared Values', imageUrl: 'https://images.unsplash.com/photo-1588325697552-c603b3a4e8d3?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'd2', name: 'Aditya K.', age: 31, location: 'Delhi', tag: 'Family Oriented', imageUrl: 'https://images.unsplash.com/photo-1620781745244-93e038209848?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'd3', name: 'Meera V.', age: 28, location: 'Bangalore', tag: 'Spiritual', imageUrl: 'https://images.unsplash.com/photo-1615162232344-bf8366c359fd?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'd1', name: 'Rohan & Priya', age: 'Matched!', location: 'Mumbai', tag: 'Shared Values', imageUrl: profile1 },
+      { id: 'd2', name: 'Aditya K.', age: 31, location: 'Delhi', tag: 'Family Oriented', imageUrl: profile2 },
+      { id: 'd3', name: 'Meera V.', age: 28, location: 'Bangalore', tag: 'Spiritual', imageUrl: profile3 },
     ]
   },
   christian: {
@@ -22,9 +37,9 @@ const communities = {
     buttonColor: 'bg-rose-600',
     buttonHover: 'hover:bg-rose-500',
     profiles: [
-      { id: 'c1', name: 'David & Hannah', age: 'Matched!', location: 'Chennai', tag: 'Faith Focused', imageUrl: 'https://images.unsplash.com/photo-1604513318280-c20d7560b4c2?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'c2', name: 'Sarah J.', age: 29, location: 'Goa', tag: 'Community First', imageUrl: 'https://images.unsplash.com/photo-1594819047125-a71c1f7b5a5c?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'c3', name: 'Michael R.', age: 33, location: 'Kochi', tag: 'Kind & Devout', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'c1', name: 'David & Hannah', age: 'Matched!', location: 'Chennai', tag: 'Faith Focused', imageUrl: profile4 },
+      { id: 'c2', name: 'Sarah J.', age: 29, location: 'Goa', tag: 'Community First', imageUrl: profile5 },
+      { id: 'c3', name: 'Michael R.', age: 33, location: 'Kochi', tag: 'Kind & Devout', imageUrl: profile6 },
     ]
   },
   muslim: {
@@ -34,9 +49,9 @@ const communities = {
     buttonColor: 'bg-green-600',
     buttonHover: 'hover:bg-green-500',
     profiles: [
-      { id: 'm1', name: 'Amir & Fatima', age: 'Matched!', location: 'Hyderabad', tag: 'Shared Beliefs', imageUrl: 'https://images.unsplash.com/photo-1577036431183-17638c6f2b54?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'm2', name: 'Yusuf A.', age: 30, location: 'Lucknow', tag: 'Family & Faith', imageUrl: 'https://images.unsplash.com/photo-1581803118522-7b72a50f7e9f?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'm3', name: 'Aisha K.', age: 27, location: 'Srinagar', tag: 'Devout & Modern', imageUrl: 'https://images.unsplash.com/photo-1562908261-56d30800b624?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'm1', name: 'Amir & Fatima', age: 'Matched!', location: 'Hyderabad', tag: 'Shared Beliefs', imageUrl: profile7 },
+      { id: 'm2', name: 'Yusuf A.', age: 30, location: 'Lucknow', tag: 'Family & Faith', imageUrl: profile8 },
+      { id: 'm3', name: 'Aisha K.', age: 27, location: 'Srinagar', tag: 'Devout & Modern', imageUrl: profile9 },
     ]
   },
   sikh: {
@@ -46,9 +61,9 @@ const communities = {
     buttonColor: 'bg-blue-600',
     buttonHover: 'hover:bg-blue-500',
     profiles: [
-      { id: 's1', name: 'Jaspreet & Harleen', age: 'Matched!', location: 'Amritsar', tag: 'Waheguru\'s Grace', imageUrl: 'https://images.unsplash.com/photo-1599507117830-29179d664b67?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 's2', name: 'Manpreet S.', age: 32, location: 'Chandigarh', tag: 'Seva & Family', imageUrl: 'https://images.unsplash.com/photo-1559905206-ce6d5d59f33f?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 's3', name: 'Simran K.', age: 29, location: 'Jalandhar', tag: 'Kind Heart', imageUrl: 'https://images.unsplash.com/photo-1631557007575-4c6d8608f65e?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 's1', name: 'Jaspreet & Harleen', age: 'Matched!', location: 'Amritsar', tag: "Waheguru's Grace", imageUrl: profile10 },
+      { id: 's2', name: 'Manpreet S.', age: 32, location: 'Chandigarh', tag: 'Seva & Family', imageUrl: profile11 },
+      { id: 's3', name: 'Simran K.', age: 29, location: 'Jalandhar', tag: 'Kind Heart', imageUrl: profile12 },
     ]
   },
   jain: {
@@ -58,9 +73,9 @@ const communities = {
     buttonColor: 'bg-purple-600',
     buttonHover: 'hover:bg-purple-500',
     profiles: [
-      { id: 'j1', name: 'Parth & Riya', age: 'Matched!', location: 'Ahmedabad', tag: 'Peaceful Union', imageUrl: 'https://images.unsplash.com/photo-1542025790-a511e3c5b886?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'j2', name: 'Siddharth J.', age: 34, location: 'Jaipur', tag: 'Mindful Living', imageUrl: 'https://images.unsplash.com/photo-1617215396501-b6578a993e87?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
-      { id: 'j3', name: 'Aditi S.', age: 28, location: 'Surat', tag: 'Compassionate', imageUrl: 'https://images.unsplash.com/photo-1613217822692-a7d4e7a88506?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&w=400' },
+      { id: 'j1', name: 'Parth & Riya', age: 'Matched!', location: 'Ahmedabad', tag: 'Peaceful Union', imageUrl: profile13 },
+      { id: 'j2', name: 'Siddharth J.', age: 34, location: 'Jaipur', tag: 'Mindful Living', imageUrl: profile14 },
+      { id: 'j3', name: 'Aditi S.', age: 28, location: 'Surat', tag: 'Compassionate', imageUrl: profile15 },
     ]
   }
 };

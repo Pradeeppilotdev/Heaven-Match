@@ -6,23 +6,10 @@
  */
 import React, { useState, useEffect } from 'react';
 import ContactForm from '../components/ContactForm';
-import LiveChatWidget from '../components/LiveChatWidget';
 import './ContactPage.css';
 
 const ContactPage = () => {
-  // State to control live chat widget visibility
-  const [showLiveChat, setShowLiveChat] = useState(false);
-  // State to store form data extracted from chat
   const [formData, setFormData] = useState(null);
-
-  /**
-   * handleFormFill - Handles auto-filling contact form from chat-extracted data
-   * Purpose: Receives user information extracted from chat conversation and passes it to contact form
-   * @param {Object} info - User information object (name, email, phone, subject) extracted from chat
-   */
-  const handleFormFill = (info) => {
-    setFormData(info);
-  };
 
   useEffect(() => {
     const existingLink = document.querySelector('link[data-font-awesome="true"]');
@@ -35,6 +22,20 @@ const ContactPage = () => {
       link.referrerPolicy = 'no-referrer';
       link.setAttribute('data-font-awesome', 'true');
       document.head.appendChild(link);
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedFormData = sessionStorage.getItem('chatSupportFormData');
+    if (storedFormData) {
+      try {
+        const parsed = JSON.parse(storedFormData);
+        setFormData(parsed);
+      } catch (error) {
+        console.warn('Unable to parse stored chat form data', error);
+      } finally {
+        sessionStorage.removeItem('chatSupportFormData');
+      }
     }
   }, []);
 
@@ -142,11 +143,6 @@ const ContactPage = () => {
           </main>
         </div>
       </div>
-      <LiveChatWidget 
-        isOpen={showLiveChat} 
-        onToggle={() => setShowLiveChat(!showLiveChat)}
-        onFormFill={handleFormFill}
-      />
     </div>
   );
 };

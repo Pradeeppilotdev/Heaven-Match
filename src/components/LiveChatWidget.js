@@ -10,7 +10,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import './LiveChatWidget.css';
 import { getBackendURL } from '../utils/backend';
 
-const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
+const LiveChatWidget = ({ isOpen = true, onToggle, onFormFill, mode = 'floating' }) => {
+  const isEmbedded = mode === 'embedded';
+  const widgetIsOpen = isEmbedded ? true : isOpen;
+
   const [messages, setMessages] = useState([
     { 
       text: 'Hello! Welcome to HeavenMatch Support. I\'m your AI assistant. How can I help you today?', 
@@ -32,6 +35,7 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
   const [showEscalation, setShowEscalation] = useState(false);
   const [showProfileQuestion, setShowProfileQuestion] = useState(false);
   const [waitingForProfileGender, setWaitingForProfileGender] = useState(false);
+  const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isProcessingRef = useRef(false);
   const lastProcessedMessageRef = useRef(null);
@@ -63,7 +67,18 @@ const LiveChatWidget = ({ isOpen, onToggle, onFormFill }) => {
    * Purpose: Ensures the latest message is visible when new messages are added
    */
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      try {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      } catch (err) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   };
 
   // Keep messagesRef in sync with messages state
@@ -1109,20 +1124,20 @@ FAQs (brief answers):
 
   return (
     <>
-      {/* Chat Toggle Button - Modern Design */}
-      <button 
-        className={`chat-toggle-btn ${isOpen ? 'open' : ''}`}
-        onClick={onToggle}
-        aria-label="Toggle live chat"
-        title="Chat with AI Assistant"
-      >
-        <i className={isOpen ? "fas fa-times" : "fas fa-robot"}></i>
-        {!isOpen && <span className="chat-badge">AI</span>}
-      </button>
+      {!isEmbedded && (
+        <button 
+          className={`chat-toggle-btn ${widgetIsOpen ? 'open' : ''}`}
+          onClick={() => onToggle?.()}
+          aria-label="Toggle live chat"
+          title="Chat with AI Assistant"
+        >
+          <i className={widgetIsOpen ? 'fas fa-times' : 'fas fa-robot'}></i>
+          {!widgetIsOpen && <span className="chat-badge">AI</span>}
+        </button>
+      )}
 
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="chat-widget">
+      {(isEmbedded || widgetIsOpen) && (
+        <div className={`chat-widget ${isEmbedded ? 'chat-widget--embedded' : ''}`}>
           <div className="chat-header">
             <div className="chat-header-info">
               <i className="fas fa-headset"></i>
@@ -1133,12 +1148,14 @@ FAQs (brief answers):
                 </span>
               </div>
             </div>
-            <button className="chat-close-btn" onClick={onToggle}>
-              <i className="fas fa-times"></i>
-            </button>
+            {!isEmbedded && (
+              <button className="chat-close-btn" onClick={() => onToggle?.()}>
+                <i className="fas fa-times"></i>
+              </button>
+            )}
           </div>
 
-          <div className="chat-messages">
+          <div className="chat-messages" ref={messagesContainerRef}>
             {messages.map((message, index) => (
               <div key={index} className={`message ${message.sender}`}>
                 <div 
