@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { HeartIcon as SolidHeart, MapPinIcon, BriefcaseIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Clean Heart Icon (for button)
@@ -19,16 +19,55 @@ const HeartIcon = ({ className = "w-6 h-6", filled = false }) => (
 );
 
 
-const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleConnect }) => {
+const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleConnect, isLiked: initialLiked = false, onUndoSkip }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
   const [contact, setContact] = useState(null);
+  const imageRef = useRef(null);
+  const cardRef = useRef(null);
   // Accessing the new AI-enriched fields
   const { name, age, location, image, profession, interests = [], bio, income, personality_tags } = profile;
 
+  // Sync liked state when prop changes
+  useEffect(() => {
+    setLiked(initialLiked);
+  }, [initialLiked]);
+
+  // Security: Disable right-click and drag on images
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleDragStart = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleSelectStart = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    if (cardRef.current) {
+      cardRef.current.addEventListener('contextmenu', handleContextMenu);
+      cardRef.current.addEventListener('dragstart', handleDragStart);
+      cardRef.current.addEventListener('selectstart', handleSelectStart);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        cardRef.current.removeEventListener('contextmenu', handleContextMenu);
+        cardRef.current.removeEventListener('dragstart', handleDragStart);
+        cardRef.current.removeEventListener('selectstart', handleSelectStart);
+      }
+    };
+  }, []);
+
   return (
     // WRAPPER: Added relative class for the stacked shadow effect
-    <div className="relative group w-full h-full"> 
+    <div className="relative group w-full h-full" ref={cardRef}> 
       {/* Stacked Shadow Elements (The "Sub-Cards" Effect) */}
       <div className="absolute inset-0 rounded-xl transition-transform duration-500 ease-out opacity-0 group-hover:opacity-100 group-hover:translate-x-3 group-hover:-translate-y-3">
         <div className="absolute inset-0 rounded-xl border border-gray-300 bg-gray-100/50 shadow-md"></div>
@@ -38,16 +77,36 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
       </div>
 
       {/* MAIN CARD: Added z-10 and transition for the move-right effect, min-height for consistency */}
-      <article className="relative z-10 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:translate-x-1 hover:-translate-y-1 flex flex-col h-full min-h-[600px]">
+      <article className="relative z-10 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:translate-x-1 hover:-translate-y-1 flex flex-col h-full min-h-[600px] select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
         <div className="relative overflow-hidden flex-shrink-0">
           <div className={`w-full h-64 sm:h-72 bg-gradient-to-br from-gray-100 to-gray-200 ${imageLoaded ? 'hidden' : 'block'}`} />
-          <img 
-            src={image} 
-            alt={name} 
-            className={`w-full h-64 sm:h-72 object-cover transition-all duration-700 group-hover:scale-110 ${imageLoaded ? 'block' : 'hidden'}`}
-            onLoad={() => setImageLoaded(true)}
-            style={{ objectPosition: 'top' }} 
-          />
+          {/* Security: Image as background with watermark overlay */}
+          <div 
+            className={`w-full h-64 sm:h-72 relative transition-all duration-700 group-hover:scale-110 ${imageLoaded ? 'block' : 'hidden'}`}
+            style={{
+              backgroundImage: `url(${image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'top center',
+              backgroundRepeat: 'no-repeat'
+            }}
+            ref={imageRef}
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            draggable="false"
+          >
+            {/* Subtle watermark overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+              <div className="text-6xl font-bold text-white transform rotate-[-45deg]">Heaven Match</div>
+            </div>
+            {/* Hidden image for loading detection */}
+            <img 
+              src={image}
+              alt=""
+              className="hidden"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
+            />
+          </div>
           
           {/* Heart Badge (Like/Unlike toggle) */}
           <button 
@@ -55,7 +114,7 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
             onClick={() => {
               const newLiked = !liked;
               setLiked(newLiked);
-              if (newLiked && onInterest) onInterest(profile.id);
+              if (onInterest) onInterest(profile.id, newLiked);
             }}
             className={`absolute top-4 right-4 rounded-full p-2 shadow-lg backdrop-blur-sm ring-2 ${liked ? 'bg-pink-500/90 ring-pink-500' : 'bg-white/90 ring-pink-500/50'}`}
             title={liked ? 'Unlike' : 'Like'}
@@ -64,31 +123,31 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
           </button>
           
           {/* Enhanced Gradient Overlay for Name/Location with better contrast */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-black/30 text-white p-4 pt-8">
-            <h3 className="text-xl font-semibold drop-shadow-lg">{name}, {age}</h3>
-            <p className="text-sm opacity-95 flex items-center gap-1 drop-shadow-md">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-black/30 text-white p-4 pt-8 select-none" style={{ userSelect: 'none' }}>
+            <h3 className="text-xl font-semibold drop-shadow-lg select-none" style={{ userSelect: 'none' }}>{name}, {age}</h3>
+            <p className="text-sm opacity-95 flex items-center gap-1 drop-shadow-md select-none" style={{ userSelect: 'none' }}>
               <MapPinIcon className="w-4 h-4 text-pink-300" /> 
               <span>{location}</span>
             </p>
           </div>
         </div>
 
-        <div className="p-4 space-y-3 flex flex-col flex-1 min-h-[280px]">
+        <div className="p-4 space-y-3 flex flex-col flex-1 min-h-[280px] select-none" style={{ userSelect: 'none' }}>
           {/* Profession & Income */}
-          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium h-[1.75rem]">
-            <span className="flex items-center gap-2 truncate">
+          <div className="text-sm text-gray-700 flex flex-col gap-1 font-medium h-[1.75rem] select-none" style={{ userSelect: 'none' }}>
+            <span className="flex items-center gap-2 truncate select-none" style={{ userSelect: 'none' }}>
               <BriefcaseIcon className="w-4 h-4 text-pink-500 flex-shrink-0" />
-              <span className="truncate">{profession} ({income || 'N/A'})</span>
+              <span className="truncate select-none" style={{ userSelect: 'none' }}>{profession} ({income || 'N/A'})</span>
             </span>
           </div>
 
           {/* Personality Tags/Bio Snippet - Minimum height for consistency */}
-          <p className="text-xs text-gray-500 line-clamp-2 italic min-h-[2.5rem] overflow-hidden">
+          <p className="text-xs text-gray-500 line-clamp-2 italic min-h-[2.5rem] overflow-hidden select-none" style={{ userSelect: 'none' }}>
             {bio || 'No bio provided.'}
           </p>
 
           {/* Interests - Fixed height to prevent 3rd line, max 2 lines */}
-          <div className="flex flex-wrap gap-2 h-[3.5rem] overflow-hidden content-start">
+          <div className="flex flex-wrap gap-2 h-[3.5rem] overflow-hidden content-start select-none" style={{ userSelect: 'none' }}>
             {(interests || []).slice(0, 5).map((hobby, idx) => {
               // Dynamic font size based on hobby name length - more aggressive for longer tags
               const getFontSize = (text) => {
@@ -101,13 +160,14 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
               };
               
               return (
-                <span 
-                  key={idx}
-                  className={`${getFontSize(hobby)} px-2.5 py-1 rounded-full bg-pink-100 text-pink-700 font-medium whitespace-nowrap`}
+              <span 
+                key={idx}
+                  className={`${getFontSize(hobby)} px-2.5 py-1 rounded-full bg-pink-100 text-pink-700 font-medium whitespace-nowrap select-none`}
+                  style={{ userSelect: 'none' }}
                   title={hobby}
-                >
+              >
                   {hobby}
-                </span>
+              </span>
               );
             })}
           </div>
@@ -131,13 +191,25 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
               <HeartIcon filled={true} className="w-5 h-5" /> 
               <span className="hidden sm:inline">{connectedProfileId === profile.id ? 'Connected' : 'Connect'}</span>
             </button>
+            {onUndoSkip ? (
+              <button 
+                onClick={() => onUndoSkip()}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-100 text-green-700 py-2.5 rounded-xl border border-green-300 shadow-[2px_2px_0_0_rgba(34,197,94,0.7)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-100 font-medium text-sm"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="hidden sm:inline">Undo Skip</span>
+            </button>
+            ) : (
             <button 
-              onClick={() => onSkip(profile.id)}
+                onClick={() => onSkip && onSkip(profile.id)}
               className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2.5 rounded-xl border border-gray-300 shadow-[2px_2px_0_0_rgba(107,114,128,0.7)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-100 font-medium text-sm"
             >
               <XMarkIcon className="w-5 h-5" />
               <span className="hidden sm:inline">Skip</span>
             </button>
+            )}
           </div>
 
           {connectedProfileId === profile.id && contact ? (
@@ -168,7 +240,7 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
                   </svg>
                 </div>
                 <p className="text-xs text-gray-400">Click Connect to view details</p>
-              </div>
+          </div>
             </div>
           )}
         </div>

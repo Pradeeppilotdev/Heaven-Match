@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Security: Prevent text selection on protected elements */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Honeypot trap - hidden from view */
+.honeypot-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 @import './styles/theme.css';
 
 :root {

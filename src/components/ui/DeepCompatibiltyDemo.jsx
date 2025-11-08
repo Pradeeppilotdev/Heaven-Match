@@ -53,7 +53,8 @@ export const DeepCompatibilityDemo = () => {
     setError(null);
     setCompatibility(null);
 
-   const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
+
     // Critical API Key Validation with local fallback
     if (!apiKey) {
       const personalityLabel = profiles.personality.find(p => p.value === userProfile.personality)?.label;
@@ -280,5 +281,3 @@ Return as JSON with this exact structure:
     </Card>
   );
 };
-
-export default DeepCompatibilityDemo;

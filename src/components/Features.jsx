@@ -1,173 +1,103 @@
-import React, { useState } from 'react';
-import {
-  Wand2,
-  HeartHandshake,
-  Sparkles,
-  ShieldCheck,
-  SlidersHorizontal,
-  Lock,
-  X
-} from 'lucide-react';
-
-// Import your interactive demo components
-import  AIIcebreakerDemo  from './UI/AIIceBreakerDemo';
-import  DeepCompatibiltyDemo  from './UI/DeepCompatibiltyDemo';
-import  AIPersonalCoach  from './UI/AIPersonalCoach';
-import  AIVerification  from './UI/AIVerification';
+// Features component module: The main container for displaying all AI features and demos.
+// This component acts as a central dispatcher, rendering either static feature cards or interactive AI demos.
+import React from 'react';
+// Import necessary icons from lucide-react.
+import {Lock, Users} from 'lucide-react'; 
+// Import the generic Card component for consistent UI wrapping.
+import Card from './UI/Card';
+// Import the individual AI demo components.
+import { AIIcebreakerDemo } from './UI/AIIceBreakerDemo';
+import { AICoachDemo } from './UI/AIPersonalCoach';
+import { DeepCompatibilityDemo } from './UI/DeepCompatibiltyDemo';
+import { AIVerificationDemo } from './UI/AIVerification';
 
 /**
- * A reusable, consistent card component for displaying a feature.
- */
-const FeatureCard = ({ icon, title, description, onClick }) => {
-  const isClickable = !!onClick;
-  
-  return (
-    <div
-      onClick={onClick}
-      className={`
-        flex flex-col bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all duration-300
-        ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''}
-      `}
-    >
-      <div className="inline-block p-3 bg-pink-50 rounded-full mb-4 w-max">
-        {React.cloneElement(icon, { className: "w-7 h-7 text-pink-600" })}
-      </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        {title}
-      </h3>
-      <p className="text-base text-gray-600">
-        {description}
-      </p>
-      {isClickable && (
-        <span className="mt-4 text-sm font-medium text-pink-600">
-          Try the demo →
-        </span>
-      )}
-    </div>
-  );
-};
-
-// --- THIS IS THE NEW, REDESIGNED MODAL ---
-/**
- * A reusable Modal component with animations and branding.
- */
-const Modal = ({ children, onClose }) => {
-  return (
-    // 1. Animated Overlay
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4 animate-fadeIn"
-      onClick={onClose}
-    >
-      {/* 2. Animated Modal Box */}
-      <div
-        className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto animate-slideInUp"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 3. "Something Special" - Pink Brand Bar */}
-        <div className="h-2 bg-pink-500 rounded-t-lg"></div>
-
-        {/* 4. Close Button (Fixed Overlap) */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 z-10 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition"
-          aria-label="Close modal"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* 5. Content Wrapper (Fixed Overlap) 
-               'pt-16' gives plenty of space for the button and title.
-        */}
-        <div className="p-8 pt-16">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-// --- END OF NEW MODAL ---
-
-
-/**
- * The main features section.
- * Manages the state for opening and closing the demo modals.
+ * Renders the main Features section, showcasing both interactive AI demos and static feature descriptions.
+ * The layout is a dynamic grid based on the 'features' array configuration.
+ * @returns {JSX.Element} The Features section component.
  */
 export const Features = () => {
-  const [openModal, setOpenModal] = useState(null);
-
-  const renderModalContent = () => {
-    switch (openModal) {
-      case 'icebreaker':
-        return <AIIcebreakerDemo />;
-      case 'compatibility':
-        return <DeepCompatibiltyDemo />;
-      case 'coach':
-        return <AIPersonalCoach />;
-      case 'verification':
-        return <AIVerification />;
-      default:
-        return null;
+  // Configuration array defining all features and specifying which ones are interactive demos.
+  const features = [
+    { 
+      title: "Deep Compatibility AI",
+      isDemo: true,
+      demoType: "compatibility" // Key to trigger the DeepCompatibilityDemo component.
+    },
+    { 
+      icon: Users, 
+      title: "Behavioral Matchmaking", 
+      description: "The system learns from your interactions, refining your potential matches based on who you show interest in." 
+    },
+    { 
+      title: "AI-Assisted Verification",
+      isDemo: true,
+      demoType: "verification" // Key to trigger the AIVerificationDemo component.
+    },
+    { 
+      title: "Smart Icebreakers",
+      isDemo: true,
+      demoType: "icebreaker" // Key to trigger the AIIcebreakerDemo component.
+    },
+    { 
+      title: "AI Relationship Coach", 
+      isDemo: true,
+      demoType: "coach"  // Key to trigger the AICoachDemo component.
+    },
+    { 
+      icon: Lock, 
+      title: "Total Privacy Control", 
+      description: "Your data trains our AI anonymously, but you always have full control over who sees your profile and photos." 
     }
-  };
+  ];
 
   return (
-    <section id="features" className="py-20 sm:py-24 bg-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-white relative overflow-hidden">
+      <div className="container mx-auto px-4 relative z-10">
         
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
-            Our AI-Powered Features
+        {/* Section Header */}
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900">
+            Our <b>Intelligent AI</b> Does the Work
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
-            We use intelligent tools to help you find meaningful, lasting connections.
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            We've built a world-class AI to take the guesswork out of finding love. Focus on the connection, we'll handle the matching.
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          
-          <FeatureCard
-            icon={<Wand2 />}
-            title="AI Icebreaker Demo"
-            description="Let our AI suggest unique conversation starters based on shared interests. No more 'hi'."
-            onClick={() => setOpenModal('icebreaker')}
-          />
-          <FeatureCard
-            icon={<HeartHandshake />}
-            title="Deep Compatibility"
-            description="Our AI analyzes shared values and life goals to find matches that truly last."
-            onClick={() => setOpenModal('compatibility')}
-          />
-          <FeatureCard
-            icon={<Sparkles />}
-            title="AI Personal Coach"
-            description="Get private, constructive feedback from our AI on how to improve your profile."
-            onClick={() => setOpenModal('coach')}
-          />
-          <FeatureCard
-            icon={<ShieldCheck />}
-            title="AI Verification"
-            description="We use advanced AI to verify profiles, ensuring you're talking to real, genuine people."
-            onClick={() => setOpenModal('verification')}
-          />
-          <FeatureCard
-            icon={<SlidersHorizontal />}
-            title="Smart Filters"
-            description="Easily find what you're looking for with filters that understand your preferences, from hobbies to education."
-          />
-          <FeatureCard
-            icon={<Lock />}
-            title="Privacy First"
-            description="You control what you share. Our platform is built with robust privacy controls to protect your data."
-          />
+        
+        {/* Feature Grid */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            // Conditional rendering logic based on whether the feature is a demo or a static card.
+            feature.isDemo ? (
+              // If it's a demo, dispatch the rendering based on the demoType property.
+              feature.demoType === "compatibility" ? (
+                <DeepCompatibilityDemo key={feature.title} />
+              ) : feature.demoType === "verification" ? (
+                <AIVerificationDemo key={feature.title} />
+              ) : feature.demoType === "icebreaker" ? (
+                <AIIcebreakerDemo key={feature.title} />
+              ) : (
+                // Fallback for demoType "coach"
+                <AICoachDemo key={feature.title} />
+              )
+            ) : (
+              // If it's not a demo, render a standard static Card component.
+              <Card key={feature.title}>
+                <div className="flex flex-col items-center text-center space-y-4">
+                  {/* Icon container */}
+                  <div className="p-4 bg-pink-100 rounded-full group-hover:bg-pink-200 transition-colors">
+                    {/* Render the dynamically passed icon component */}
+                    <feature.icon className="w-8 h-8 text-pink-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              </Card>
+            )
+          ))}
         </div>
       </div>
-
-      {/* Modal Rendering */}
-      {openModal && (
-        <Modal onClose={() => setOpenModal(null)}>
-          {renderModalContent()}
-        </Modal>
-      )}
     </section>
   );
 };
