@@ -40,10 +40,30 @@ const LiveChatWidget = ({ isOpen = true, onToggle, onFormFill, mode = 'floating'
   const isProcessingRef = useRef(false);
   const lastProcessedMessageRef = useRef(null);
   const responseAddedRef = useRef(false);
+  const activeReplyRef = useRef(null);
+  const currentRequestIdRef = useRef(0);
   const messagesRef = useRef(messages);
+  const pendingTimeoutsRef = useRef([]);
   
   // Get model from environment variable (token is handled by backend)
   const HF_MODEL = process.env.REACT_APP_HF_MODEL || 'meta-llama/Meta-Llama-3-8B-Instruct';
+
+  const clearPendingTimeouts = () => {
+    if (pendingTimeoutsRef.current.length) {
+      pendingTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      pendingTimeoutsRef.current = [];
+    }
+  };
+
+  const scheduleTimeout = (callback, delay) => {
+    const wrapped = () => {
+      pendingTimeoutsRef.current = pendingTimeoutsRef.current.filter(id => id !== timeoutId);
+      callback();
+    };
+    const timeoutId = setTimeout(wrapped, delay);
+    pendingTimeoutsRef.current.push(timeoutId);
+    return timeoutId;
+  };
 
   // Debug: Check backend connection (only in development)
   useEffect(() => {
@@ -62,22 +82,37 @@ const LiveChatWidget = ({ isOpen = true, onToggle, onFormFill, mode = 'floating'
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      clearPendingTimeouts();
+    };
+  }, []);
+
   /**
    * scrollToBottom - Scrolls chat messages to the bottom
    * Purpose: Ensures the latest message is visible when new messages are added
    */
   const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      try {
-        messagesContainerRef.current.scrollTo({
-          top: messagesContainerRef.current.scrollHeight,
-          behavior: 'smooth'
-        });
-      } catch (err) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    const performScroll = () => {
+      const container = messagesContainerRef.current;
+      if (container) {
+        try {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        } catch (err) {
+          container.scrollTop = container.scrollHeight;
+        }
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
+    };
+
+    if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+      window.requestAnimationFrame(performScroll);
     } else {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      performScroll();
     }
   };
 
@@ -127,6 +162,14 @@ FAQs (brief answers):
     historyLines.push(`User: ${userMessage}`);
 
     return `${systemInstruction}\nConversation so far:\n${historyLines.join('\n')}\n\nAssistant:`;
+  };
+
+  const hasBotMessage = (messagesToCheck, text) => {
+    if (!text) return false;
+    const normalized = text.trim();
+    return messagesToCheck.some(
+      msg => msg.sender === 'bot' && msg.text && msg.text.trim() === normalized
+    );
   };
 
   /**
@@ -624,10 +667,26 @@ FAQs (brief answers):
       return; // Already processing this message
     }
     
+    // Clear any pending timeouts or contextual prompts from previous requests
+    clearPendingTimeouts();
+    setShowRouteSuggestion(false);
+    setSuggestedRoute(null);
+    setShowEscalation(false);
+
     // Prevent duplicate processing
     isProcessingRef.current = true;
     lastProcessedMessageRef.current = userMessageText;
     responseAddedRef.current = false;
+    currentRequestIdRef.current += 1;
+    const requestId = currentRequestIdRef.current;
+    const replyCandidate = {
+      id: requestId,
+      intent: null,
+      faqSource: null,
+      text: null,
+      affirmed: false
+    };
+    activeReplyRef.current = replyCandidate;
     
     setInputMessage('');
     setError(null);
@@ -758,6 +817,8 @@ FAQs (brief answers):
     
     // Process bot response OUTSIDE of setState to prevent duplicates
     (async () => {
+      const ensureActiveRequest = () => requestId === currentRequestIdRef.current;
+
       // Get current messages for context - use ref to get latest (includes user message)
       const currentMessages = messagesRef.current;
       
@@ -767,6 +828,7 @@ FAQs (brief answers):
         // Handle both object and string responses from detectIntent
         const intent = (intentResult && typeof intentResult === 'object' && intentResult.intent) ? intentResult.intent : intentResult;
         setDetectedIntent(intent);
+        replyCandidate.intent = intent || intentResult?.intent || 'general';
         
         // Double-check: if intent is profile_match but wasn't caught by quick check, handle it now
         if ((intent === 'profile_match' || intentResult?.intent === 'profile_match') && !waitingForProfileGender && !isQuickProfileCheck) {
@@ -841,7 +903,7 @@ FAQs (brief answers):
         let useFAQ = false;
         
         // CRITICAL: Check if response already added to prevent duplicates
-        if (responseAddedRef.current) {
+        if (!ensureActiveRequest() || responseAddedRef.current) {
           setIsTyping(false);
           isProcessingRef.current = false;
           return;
@@ -856,12 +918,13 @@ FAQs (brief answers):
               if (!responseAddedRef.current) {
                 botResponseText = faqResult.answer;
                 useFAQ = true;
+                replyCandidate.faqSource = faqResult;
               }
             } else {
               // Step 2: Get AI response (only if FAQ didn't match)
               // CRITICAL: Check again before calling to prevent duplicate
-              if (!responseAddedRef.current) {
-                botResponseText = await getBotResponse(userMessageText, currentMessages).catch(err => {
+                if (!responseAddedRef.current) {
+                  botResponseText = await getBotResponse(userMessageText, currentMessages).catch(err => {
                   console.error('Error getting bot response:', err);
                   return 'I apologize, but I encountered an error. Please try again or contact support.';
                 });
@@ -966,6 +1029,18 @@ FAQs (brief answers):
           responseAddedRef.current = true;
           
           setMessages(current => {
+            if (!ensureActiveRequest()) {
+              responseAddedRef.current = false;
+              isProcessingRef.current = false;
+              setIsTyping(false);
+              return current;
+            }
+            if (hasBotMessage(current, finalResponse)) {
+              responseAddedRef.current = false;
+              isProcessingRef.current = false;
+              setIsTyping(false);
+              return current;
+            }
             // Check if message already exists in last 3 messages to prevent duplicates
             const lastThree = current.slice(-3);
             const isDuplicate = lastThree.some(msg => 
@@ -989,10 +1064,14 @@ FAQs (brief answers):
               time: new Date().toLocaleTimeString()
             }];
           });
+          replyCandidate.text = finalResponse;
           
           // Show route suggestion if available (only if not FAQ answer and not profile request)
           if (!useFAQ && intent !== 'profile_match' && routeData && routeData.route.channel !== 'chat' && showRouteSuggestion) {
-            setTimeout(() => {
+            scheduleTimeout(() => {
+              if (!ensureActiveRequest()) {
+                return;
+              }
               setMessages(current => [...current, {
                 text: `💡 Tip: For ${intent} issues, we recommend ${routeData?.route?.name || 'Support'} (${routeData?.route?.contact || 'Contact'}).`,
                 sender: 'bot',
@@ -1046,7 +1125,10 @@ FAQs (brief answers):
           
           // After bot response, offer to create ticket if needed (only after 2+ messages)
           if (!useFAQ && intent !== 'general' && currentMessages.filter(m => m.sender === 'user').length >= 2) {
-            setTimeout(() => {
+            scheduleTimeout(() => {
+              if (!ensureActiveRequest()) {
+                return;
+              }
               setMessages(current => [...current, {
                 text: 'Would you like me to create a support ticket for this issue?',
                 sender: 'bot',
@@ -1056,6 +1138,11 @@ FAQs (brief answers):
             }, 2500);
           }
         } else {
+          if (!ensureActiveRequest()) {
+            setIsTyping(false);
+            isProcessingRef.current = false;
+            return;
+          }
           setMessages(current => [...current, {
             text: 'I apologize, but I encountered an error. Please contact our support team at globalsupport@company.com or call 1800-123-4567 for assistance.',
             sender: 'bot',
@@ -1063,6 +1150,9 @@ FAQs (brief answers):
           }]);
         }
         
+        if (!ensureActiveRequest()) {
+          return;
+        }
         setIsTyping(false);
         setError(null);
         isProcessingRef.current = false;
@@ -1073,11 +1163,13 @@ FAQs (brief answers):
         }, 2000);
       } catch (err) {
         console.error('Error in message processing:', err);
-        setIsTyping(false);
-        setError(null);
-        isProcessingRef.current = false;
-        responseAddedRef.current = false;
-        lastProcessedMessageRef.current = null;
+        if (ensureActiveRequest()) {
+          setIsTyping(false);
+          setError(null);
+          isProcessingRef.current = false;
+          responseAddedRef.current = false;
+          lastProcessedMessageRef.current = null;
+        }
       }
     })();
   };
@@ -1106,18 +1198,30 @@ FAQs (brief answers):
     const ticketData = await createTicket(extractedInfo, detectedIntent, ticketMessage);
     
     if (ticketData && ticketData.success) {
-      setMessages(prev => [...prev, {
-        text: `✅ Great! I've created support ticket ${ticketData.ticketId} for you. ${ticketData.message}`,
-        sender: 'bot',
-        time: new Date().toLocaleTimeString()
-      }]);
+      setMessages(prev => {
+        const ticketMessageText = `✅ Great! I've created support ticket ${ticketData.ticketId} for you. ${ticketData.message}`;
+        if (hasBotMessage(prev, ticketMessageText)) {
+          return prev;
+        }
+        return [...prev, {
+          text: ticketMessageText,
+          sender: 'bot',
+          time: new Date().toLocaleTimeString()
+        }];
+      });
       setShowCreateTicket(false);
     } else {
-      setMessages(prev => [...prev, {
-        text: 'I had trouble creating the ticket. Please use the contact form or email us at globalsupport@company.com',
-        sender: 'bot',
-        time: new Date().toLocaleTimeString()
-      }]);
+      setMessages(prev => {
+        const fallbackText = 'I had trouble creating the ticket. Please use the contact form or email us at globalsupport@company.com';
+        if (hasBotMessage(prev, fallbackText)) {
+          return prev;
+        }
+        return [...prev, {
+          text: fallbackText,
+          sender: 'bot',
+          time: new Date().toLocaleTimeString()
+        }];
+      });
     }
     setIsTyping(false);
   };
@@ -1616,17 +1720,11 @@ FAQs (brief answers):
 
             {/* Quick Replies */}
             {quickReplies.length > 0 && (
-            <div style={{
-              padding: '8px 12px',
-              background: '#f8f9fa',
-              borderTop: '1px solid #e0e0e0',
-              display: 'flex',
-              gap: '8px',
-              flexWrap: 'wrap'
-            }}>
+            <div className="chat-quick-replies">
               {quickReplies.map((reply, idx) => (
                 <button
                   key={idx}
+                  className="chat-quick-reply"
                   onClick={() => {
                     // Directly send the message
                     const userMsg = {
@@ -1656,24 +1754,6 @@ FAQs (brief answers):
                       });
                       return updated;
                     });
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    background: 'white',
-                    border: '1px solid #ec4899',
-                    borderRadius: '16px',
-                    color: '#ec4899',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#ec4899';
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.color = '#ec4899';
                   }}
                 >
                   {reply}
@@ -1786,7 +1866,7 @@ FAQs (brief answers):
                   }]);
                   setShowEscalation(false);
                   // Trigger response
-                  setTimeout(() => {
+                  scheduleTimeout(() => {
                     setMessages(prev => [...prev, {
                       text: 'I\'ll connect you with a human agent. Please wait a moment. You can also call us at 1800-123-4567 for immediate assistance.',
                       sender: 'bot',

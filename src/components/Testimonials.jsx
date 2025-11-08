@@ -214,7 +214,7 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
             <div className="container mx-auto px-4 relative z-10">
                 <div className="text-center mb-16 space-y-4">
                     <div className="flex items-center justify-center gap-3">
-                        <h2 className="text-3xl md:text-5xl font-bold text-gray-900">Real Stories, Real Love </h2>
+                        <h2 className="text-3xl md:text-5xl font-bold text-gray-900">Real Stories, Real Love ✨</h2>
                         <button
                             onClick={handleRefresh}
                             disabled={loading}

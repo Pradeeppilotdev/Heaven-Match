@@ -31,13 +31,6 @@ const ChatPage = () => {
 
   return (
     <div className="chat-page">
-      <div className="chat-page__header">
-        <div className="chat-page__container">
-          <h1>Live Support Chat</h1>
-          <p>Talk with our AI assistant for instant help, or connect to our support team.</p>
-        </div>
-      </div>
-
       <div className="chat-page__content">
         <div className="chat-page__widget">
           <LiveChatWidget
