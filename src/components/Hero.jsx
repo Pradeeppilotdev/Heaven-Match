@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Brain } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 // Replicating the minimal Button component structure for context clarity
 const Button = ({ children, variant, className, ...props }) => (
@@ -115,7 +115,6 @@ export const Hero = () => {
           <div className="space-y-8">
             {/* AI Callout Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white">
-              <Brain className="w-4 h-4" />
               <span className="font-medium">The Future of Matchmaking is Here</span>
             </div>
             

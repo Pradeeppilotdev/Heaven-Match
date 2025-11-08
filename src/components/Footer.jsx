@@ -15,14 +15,18 @@ const Footer = () => {
   const legal = ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Refund Policy'];
 
   const routeMap = {
+    'About Us': '/about',
+    'How It Works': '/#how-it-works',
+    'Success Stories': '/#success-stories',
+    'Blog': '/blog',
     'Help Center': '/help',
     'Contact Us': '/contact',
     'FAQs': '/help#faqs',
     'Safety Tips': '/help#safety',
-    'Privacy Policy': '/support',
-    'Terms of Service': '/support',
-    'Cookie Policy': '/support',
-    'Refund Policy': '/support'
+    'Privacy Policy': '/privacy',
+    'Terms of Service': '/terms',
+    'Cookie Policy': '/cookie-policy',
+    'Refund Policy': '/refund-policy'
   };
 
   return (
@@ -47,10 +51,17 @@ const Footer = () => {
             </p>
             {/* Social Media Links */}
             <div className="flex gap-4">
-              {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+              {[
+                { Icon: Facebook, href: 'https://facebook.com/heavenmatch' },
+                { Icon: Twitter, href: 'https://twitter.com/heavenmatch' },
+                { Icon: Instagram, href: 'https://instagram.com/heavenmatch' },
+                { Icon: Linkedin, href: 'https://linkedin.com/company/heavenmatch' }
+              ].map(({ Icon, href }, i) => (
                 <a 
                   key={i} 
-                  href="#" 
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="p-2 bg-pink-100 rounded-full hover:bg-pink-200 transition-colors"
                   // Essential for accessibility (screen readers).
                   aria-label={`Social media link ${i + 1}`} 
@@ -72,15 +83,9 @@ const Footer = () => {
               <ul className="space-y-2">
                 {section.items.map((item) => (
                   <li key={item}>
-                    {routeMap[item] ? (
-                      <Link to={routeMap[item]} className="text-gray-600 hover:text-pink-600 transition-colors">
-                        {item}
-                      </Link>
-                    ) : (
-                      <a href="/#" className="text-gray-600 hover:text-pink-600 transition-colors">
-                        {item}
-                      </a>
-                    )}
+                    <Link to={routeMap[item] || '/'} className="text-gray-600 hover:text-pink-600 transition-colors">
+                      {item}
+                    </Link>
                   </li>
                 ))}
               </ul>

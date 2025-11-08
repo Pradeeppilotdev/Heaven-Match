@@ -33,8 +33,7 @@ export const AICoachDemo = () => {
     setError(null);
     setAdvice('');
 
-    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
-
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
     // Critical configuration check with local fallback
     if (!apiKey) {
       const local = [
@@ -182,3 +181,5 @@ Make it conversational and friendly, like advice from a wise friend.`;
     </Card>
   );
 };
+
+export default AICoachDemo;

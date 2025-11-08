@@ -16,6 +16,7 @@ import HelpPage from './pages/HelpPage.js';
 import LocationsPage from './pages/LocationsPage.js';
 import SupportPage from './pages/SupportPage.js';
 import Recommendations from './pages/Recommendations.jsx';
+import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import './App.css';
 
 // Component that contains the main content of the home page (excluding Header/Footer)
@@ -57,6 +58,7 @@ function App() {
             <Route path="/locations" element={<LocationsPage />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/subscriptions" element={<SubscriptionPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

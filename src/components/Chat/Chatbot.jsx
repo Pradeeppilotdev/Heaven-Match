@@ -9,7 +9,7 @@ import '../../styles/Chat.css'; // Import CSS
 
 // function to integrate all the other pages
 const Chatbot = () => {
-    const { messages, isLoading, error, sendMessage, clearChat, userGender, suggestions } = useChat();
+    const { messages, isLoading, error, sendMessage, clearChat, suggestions } = useChat();
     const messagesEndRef = useRef(null);
 
     // Auto-scroll to the latest message

@@ -11,6 +11,12 @@
   text-align: center;
 }
 
+.locations-header .container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 3vw, 1.75rem);
+}
+
 .locations-header h1 {
   font-size: 3rem;
   font-weight: 700;
@@ -22,100 +28,17 @@
   opacity: 0.95;
 }
 
-.corporate-office-section {
-  margin: 3rem 0;
-}
-
-.office-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.office-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.office-card.featured {
-  border: 3px solid #ec4899;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-}
-
-.office-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.office-header h2,
-.office-header h3 {
-  font-size: 1.8rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.office-header h2 i,
-.office-header h3 i {
-  color: #ec4899;
-}
-
-.office-name {
-  font-size: 1.1rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.office-details {
+.locations-page > .container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 3vw, 1.75rem) clamp(3rem, 6vw, 4rem);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.detail-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.detail-item i {
-  font-size: 1.3rem;
-  color: #ec4899;
-  margin-top: 0.25rem;
-  min-width: 24px;
-}
-
-.detail-item strong {
-  display: block;
-  color: #333;
-  margin-bottom: 0.25rem;
-  font-size: 1rem;
-}
-
-.detail-item p {
-  color: #666;
-  margin: 0;
-  line-height: 1.6;
-}
-
-.detail-item a {
-  color: #ec4899;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.detail-item a:hover {
-  color: #db2777;
-  text-decoration: underline;
+  gap: clamp(3rem, 5vw, 4rem);
 }
 
 .map-section {
-  margin: 4rem 0;
+  margin: 0;
 }
 
 .section-title {
@@ -132,93 +55,8 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.regional-offices-section {
-  margin: 4rem 0;
-}
-
-.offices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-}
-
-.global-offices-section {
-  margin: 4rem 0;
-  text-align: center;
-}
-
-.section-subtitle {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 3rem;
-}
-
-.global-offices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-}
-
-.global-office-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  text-align: center;
-}
-
-.global-office-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-
-.flag-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.5rem;
-  color: white;
-  font-size: 2rem;
-}
-
-.global-office-card h3 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.global-office-card .city {
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.phone-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #ec4899;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.phone-link:hover {
-  color: #db2777;
-  text-decoration: underline;
-}
-
 /* Tablet and below (1024px and below) */
 @media (max-width: 1024px) {
-  .offices-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-
   .map-container iframe {
     height: 450px;
   }
@@ -226,90 +64,6 @@
 
 /* Small tablets and large phones (968px and below) */
 @media (max-width: 968px) {
-  .offices-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .global-offices-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Small tablets and large phones (768px and below) */
-@media (max-width: 768px) {
-  .locations-header {
-    padding: 3rem 1.5rem;
-  }
-
-  .locations-header h1 {
-    font-size: 2rem;
-  }
-
-  .locations-header p {
-    font-size: 1.1rem;
-  }
-
-  .corporate-office-section {
-    margin: 2rem 0;
-  }
-
-  .office-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .office-header h2,
-  .office-header h3 {
-    font-size: 1.5rem;
-  }
-
-  .section-title {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .map-section {
-    margin: 3rem 0;
-  }
-
-  .map-container iframe {
-    height: 400px;
-  }
-
-  .regional-offices-section {
-    margin: 3rem 0;
-  }
-
-  .global-offices-section {
-    margin: 3rem 0;
-  }
-
-  .section-subtitle {
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
-  }
-
-  .global-offices-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .global-office-card {
-    padding: 2rem;
-  }
-
-  .flag-icon {
-    width: 70px;
-    height: 70px;
-    font-size: 1.8rem;
-  }
-
-  .global-office-card h3 {
-    font-size: 1.3rem;
-  }
-}
-
-/* Small phones (480px and below) */
-@media (max-width: 480px) {
   .locations-header {
     padding: 2.5rem 1rem;
   }
@@ -320,48 +74,6 @@
 
   .locations-header p {
     font-size: 1rem;
-  }
-
-  .corporate-office-section {
-    margin: 1.5rem 0;
-  }
-
-  .office-card {
-    padding: 1.5rem 1rem;
-  }
-
-  .office-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-  }
-
-  .office-header h2,
-  .office-header h3 {
-    font-size: 1.3rem;
-  }
-
-  .office-name {
-    font-size: 1rem;
-  }
-
-  .office-details {
-    gap: 1.25rem;
-  }
-
-  .detail-item {
-    gap: 0.75rem;
-  }
-
-  .detail-item i {
-    font-size: 1.2rem;
-  }
-
-  .detail-item strong {
-    font-size: 0.95rem;
-  }
-
-  .detail-item p {
-    font-size: 0.9rem;
   }
 
   .section-title {
@@ -375,62 +87,6 @@
 
   .map-container iframe {
     height: 350px;
-  }
-
-  .regional-offices-section,
-  .global-offices-section {
-    margin: 2.5rem 0;
-  }
-
-  .section-subtitle {
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .global-office-card {
-    padding: 1.75rem;
-  }
-
-  .flag-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .global-office-card h3 {
-    font-size: 1.2rem;
-  }
-
-  .global-office-card .city {
-    font-size: 0.95rem;
-  }
-
-  .phone-link {
-    font-size: 0.95rem;
-  }
-}
-
-/* Extra small phones (320px and below) */
-@media (max-width: 320px) {
-  .locations-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .office-card {
-    padding: 1.25rem 0.85rem;
-  }
-
-  .section-title {
-    font-size: 1.5rem;
-  }
-
-  .map-container iframe {
-    height: 300px;
-  }
-
-  .global-office-card {
-    padding: 1.5rem;
   }
 }
 

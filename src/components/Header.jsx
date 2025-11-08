@@ -23,10 +23,10 @@ export const Header = () => {
 
   const menuItems = [
     { label: 'Home', to: '/' },
+    { label: 'Recommendations', to: '/recommendations' },
     { label: 'Chat', to: '/chat' },
-    { label: 'Register', to: '/register' },
-    { label: 'Contact', to: '/contact' },
-    { label: 'Recommendations', to: '/recommendations' }
+    { label: 'Subscriptions', to: '/subscriptions' },
+    { label: 'Contact', to: '/contact' }
   ];
 
   return (
@@ -60,7 +60,7 @@ export const Header = () => {
           <div className="flex items-center gap-4">
             <Link to="/register" className="hidden sm:flex">
               <Button>
-                Register Free
+                Register
               </Button>
             </Link>
             {/* Mobile menu toggle button */}

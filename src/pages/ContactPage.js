@@ -56,14 +56,6 @@ const ContactPage = () => {
     whatsapp: 'https://wa.me/919876543210'
   };
 
-  const socialLinks = [
-    { icon: 'fab fa-facebook', url: 'https://facebook.com/heavenmatch', name: 'Facebook' },
-    { icon: 'fab fa-twitter', url: 'https://twitter.com/heavenmatch', name: 'Twitter' },
-    { icon: 'fab fa-instagram', url: 'https://instagram.com/heavenmatch', name: 'Instagram' },
-    { icon: 'fab fa-linkedin', url: 'https://linkedin.com/company/heavenmatch', name: 'LinkedIn' },
-    { icon: 'fab fa-youtube', url: 'https://youtube.com/heavenmatch', name: 'YouTube' }
-  ];
-
   return (
     <div className="contact-page-wrapper">
       <div className="contact-page-header">
@@ -83,7 +75,7 @@ const ContactPage = () => {
                 <i className="fas fa-building"></i>
                 <h2>Corporate Address</h2>
               </div>
-              <div className="card-content">
+              <div className="card-content address-content">
                 <p className="company-name">{contactInfo.corporate.name}</p>
                 {contactInfo.corporate.address.map((line, index) => (
                   <p key={index}>{line}</p>
@@ -97,7 +89,7 @@ const ContactPage = () => {
                 <i className="fas fa-phone"></i>
                 <h2>Phone Support</h2>
               </div>
-              <div className="card-content">
+              <div className="card-content phone-content">
                 {contactInfo.phones.map((phone, index) => (
                   <div key={index} className={`phone-item ${phone.urgent ? 'urgent' : ''}`}>
                     <p className="phone-label">{phone.label}</p>
@@ -115,7 +107,7 @@ const ContactPage = () => {
                 <i className="fas fa-envelope"></i>
                 <h2>Email Support</h2>
               </div>
-              <div className="card-content">
+              <div className="card-content email-content">
                 <a href={`mailto:${contactInfo.email}`} className="email-link">
                   {contactInfo.email}
                 </a>
@@ -129,45 +121,11 @@ const ContactPage = () => {
                 <i className="fab fa-whatsapp"></i>
                 <h2>WhatsApp Support</h2>
               </div>
-              <div className="card-content">
+              <div className="card-content whatsapp-content">
                 <p>Get instant support via WhatsApp</p>
                 <a href={contactInfo.whatsapp} className="whatsapp-btn" target="_blank" rel="noopener noreferrer">
                   <i className="fab fa-whatsapp"></i> Chat on WhatsApp
                 </a>
-              </div>
-            </div>
-
-            {/* Social Media */}
-            <div className="info-card">
-              <div className="card-header">
-                <i className="fas fa-share-alt"></i>
-                <h2>Follow Us</h2>
-              </div>
-              <div className="card-content">
-                <div className="social-links">
-                  {socialLinks.map((social, index) => (
-                    <a
-                      key={index}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="social-link"
-                      title={social.name}
-                      aria-label={social.name}
-                      style={{
-                        background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <i 
-                        className={social.icon} 
-                        aria-hidden="true"
-                      ></i>
-                    </a>
-                  ))}
-                </div>
               </div>
             </div>
           </aside>

@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { XMarkIcon, SparklesIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { getChatbotResponse, processQuestionnaireResponse } from '../services/ai';
-import { checkRateLimit } from '../utils/rateLimiter';
 
 // Floating chat widget used previously on Recommendations page
 const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestionnaire }) => {
@@ -34,17 +33,6 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || isTyping) return;
-    
-    // Rate limiting check
-    const rateLimitCheck = checkRateLimit('chatbot');
-    if (!rateLimitCheck.allowed) {
-      setMessages((prev) => [...prev, { 
-        role: 'model', 
-        content: `Rate limit exceeded. Please wait ${Math.ceil((rateLimitCheck.resetTime - Date.now()) / 1000)} seconds before sending another message.` 
-      }]);
-      return;
-    }
-    
     const userMessage = input.trim();
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
@@ -59,22 +47,7 @@ const Chatbot = ({ mode = 'conversation', onQuestionnaireComplete, onEndQuestion
           setQuestionnaireData(result.updatedData);
           if (result.isComplete) {
             setMessages((prev) => [...prev, { role: 'model', content: result.nextMessage }]);
-            // Generate recommendations from the completed questionnaire data
-            if (onQuestionnaireComplete) {
-              // Import and call the function to generate recommendations
-              const { generateRecommendationsFromUserData } = await import('../services/api');
-              try {
-                const recommendations = await generateRecommendationsFromUserData(result.updatedData);
-                onQuestionnaireComplete(result.updatedData, recommendations);
-              } catch (error) {
-                console.error('Error generating recommendations:', error);
-                setMessages((prev) => [...prev, { 
-                  role: 'model', 
-                  content: 'I encountered an error while finding your matches. Please try refreshing the page.' 
-                }]);
-                onQuestionnaireComplete(result.updatedData, []);
-              }
-            }
+            if (onQuestionnaireComplete) onQuestionnaireComplete(result.updatedData, []);
           } else {
             setMessages((prev) => [...prev, { role: 'model', content: result.nextMessage }]);
           }

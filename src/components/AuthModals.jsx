@@ -326,11 +326,11 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
             />
             <label htmlFor="terms" className="text-sm text-gray-600">
               I agree to the{' '}
-              <a href="#" className="text-pink-600 hover:text-pink-700 font-medium">
+              <a href="/terms" className="text-pink-600 hover:text-pink-700 font-medium">
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a href="#" className="text-pink-600 hover:text-pink-700 font-medium">
+              <a href="/privacy" className="text-pink-600 hover:text-pink-700 font-medium">
                 Privacy Policy
               </a>
             </label>

@@ -1,5 +1,5 @@
 import { getGeminiRankedRecommendations } from "./ai"; // <-- NEW: Import the Gemini ranking function
-import { mockUserProfile, mockProfiles } from "../data/mockUser"; 
+import { mockUserProfile } from "../data/mockUser"; 
 import { staticCandidates } from "../data/staticCandidates"; 
 
 /**

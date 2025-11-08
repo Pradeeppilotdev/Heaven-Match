@@ -1,0 +1,227 @@
+.ticket-system {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ticket-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ticket-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ticket-form label {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.ticket-form select,
+.ticket-form input,
+.ticket-form textarea {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
+}
+
+.ticket-form select:focus,
+.ticket-form input:focus,
+.ticket-form textarea:focus {
+  outline: none;
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+}
+
+.ticket-form textarea {
+  resize: vertical;
+  min-height: 160px;
+}
+
+.submit-ticket-btn {
+  background: #ec4899;
+  color: #ffffff;
+  border: none;
+  padding: 0.95rem 1.8rem;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 20px rgba(236, 72, 153, 0.18);
+}
+
+.submit-ticket-btn:hover {
+  background: #db2777;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(236, 72, 153, 0.22);
+}
+
+.ticket-success {
+  background: #fdf2f8;
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: 18px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 10px 20px rgba(236, 72, 153, 0.12);
+}
+
+.ticket-success i {
+  font-size: 3rem;
+  color: #ec4899;
+  margin-bottom: 1rem;
+}
+
+.ticket-success h3 {
+  color: #9d174d;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+.ticket-success p {
+  color: #4b5563;
+  margin: 0.5rem 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(236, 72, 153, 0.12);
+  color: #be185d;
+}
+
+.ticket-tracking {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.ticket-tracking h3 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.ticket-tracking h3 i {
+  color: #ec4899;
+}
+
+.track-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.track-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.track-input:focus {
+  outline: none;
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+}
+
+.track-btn {
+  background: #ec4899;
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 18px rgba(236, 72, 153, 0.18);
+}
+
+.track-btn:hover {
+  background: #db2777;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(236, 72, 153, 0.22);
+}
+
+@media (max-width: 768px) {
+  .ticket-system {
+    gap: 1.25rem;
+  }
+
+  .ticket-form {
+    gap: 1.1rem;
+  }
+
+  .submit-ticket-btn {
+    width: 100%;
+  }
+
+  .ticket-tracking {
+    padding: 1.5rem;
+  }
+
+  .track-form {
+    flex-direction: column;
+  }
+
+  .track-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .ticket-form label {
+    font-size: 0.9rem;
+  }
+
+  .ticket-form select,
+  .ticket-form input,
+  .ticket-form textarea {
+    padding: 0.65rem;
+    font-size: 0.95rem;
+  }
+
+  .ticket-success {
+    padding: 1.6rem;
+  }
+
+  .ticket-success i {
+    font-size: 2.4rem;
+  }
+
+  .ticket-tracking {
+    padding: 1.35rem;
+  }
+
+  .track-btn {
+    padding: 0.7rem 1.3rem;
+  }
+}
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 // Import icons for UI elements, navigation, ratings, and content generation.
 import { Quote, Star, User, ChevronLeft, ChevronRight, RefreshCw, Loader2 } from 'lucide-react';
 
@@ -85,8 +85,7 @@ export const Testimonials = () => {
         setLoading(true);
         setError(null);
 
-        const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_GEMINI_API_KEY);
-
+        const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
         // Configuration check with local fallback
         if (!apiKey) {
             const local = Array.from({ length: TOTAL_DISPLAYED }).map((_, i) => ({
@@ -180,6 +179,7 @@ Keep stories genuine, warm, and family-friendly. Focus on emotional connections 
     };
 
     // Initial data load on component mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         generateTestimonials();
     }, []);
