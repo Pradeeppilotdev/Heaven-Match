@@ -1,15 +1,15 @@
-
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT_SERVER || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 app.get('/api/generate-token', (req, res) => {
   const token = generateFormToken(req);
@@ -30,7 +30,7 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
-  'http://localhost:3000,http://127.0.0.1:3000,https://heavenmatch.com,https://www.heavenmatch.com'
+  'http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://localhost:5174,https://heavenmatch.com,https://www.heavenmatch.com'
 )
   .split(',')
   .map(origin => origin.trim())
@@ -249,6 +249,37 @@ const logSecurityEvent = (req, validation) => {
   });
 };
 
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF and images allowed.'));
+    }
+  }
+});
+
+// Simple in-memory store for OTPs
+const otpStore = new Map();
+
+// Configure nodemailer transport via environment variables
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// Helper to generate OTP
+const genOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
 setInterval(() => {
   const now = Date.now();
   for (const [token, data] of formTimestamps.entries()) {
@@ -269,12 +300,23 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000).unref();
 
+// Cleanup loop to purge expired OTPs every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of otpStore.entries()) {
+    if (entry.expiresAt && now > entry.expiresAt + (5 * 60 * 1000)) {
+      otpStore.delete(email);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: false
 }));
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
 const securityLogger = (event, details = {}) => {
@@ -405,6 +447,252 @@ app.get('/api/csrf-token', (req, res) => {
   });
   res.json({ token });
 });
+
+/**
+ * OTP Send endpoint
+ * Purpose: Sends OTP to user's Gmail address for verification
+ * POST /api/send-otp
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's Gmail address
+ * @returns {Object} JSON response with success status and message
+ */
+app.post('/api/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !/^[^\s@]+@gmail\.com$/i.test(email)) {
+      return res.status(400).json({ ok: false, message: 'Valid Gmail required' });
+    }
+
+    const existing = otpStore.get(email);
+    if (existing && existing.attempts >= 5 && Date.now() < existing.blockUntil) {
+      return res.status(429).json({ ok: false, message: 'Too many attempts. Try later.' });
+    }
+
+    const otp = genOtp();
+    const expiresAt = Date.now() + (2 * 60 * 1000);
+    otpStore.set(email, { otp, expiresAt, attempts: (existing?.attempts || 0), blockUntil: 0 });
+
+    const mailOptions = {
+      from: process.env.FROM_EMAIL || process.env.SMTP_USER,
+      to: email,
+      subject: 'Your HeavenMatch OTP',
+      text: `Your HeavenMatch OTP is ${otp}. It expires in 2 minutes.`,
+      html: `<p>Your HeavenMatch OTP is <strong>${otp}</strong>. It expires in 2 minutes.</p>`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    const nowStored = otpStore.get(email);
+    nowStored.attempts = (nowStored.attempts || 0) + 1;
+    otpStore.set(email, nowStored);
+
+    return res.json({ ok: true, message: 'OTP sent' });
+  } catch (err) {
+    console.error('send-otp error', err);
+    return res.status(500).json({ ok: false, message: 'Failed to send OTP' });
+  }
+});
+
+/**
+ * OTP Verify endpoint
+ * Purpose: Verifies the OTP sent to user's email
+ * POST /api/verify-otp
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's Gmail address
+ * @param {string} req.body.otp - The OTP code to verify
+ * @returns {Object} JSON response with verification status and message
+ */
+app.post('/api/verify-otp', (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ ok: false, message: 'email & otp required' });
+
+    const entry = otpStore.get(email);
+    if (!entry) return res.status(400).json({ ok: false, message: 'No OTP sent or expired' });
+    if (Date.now() > entry.expiresAt) {
+      otpStore.delete(email);
+      return res.status(400).json({ ok: false, message: 'OTP expired' });
+    }
+
+    entry.attempts = (entry.attempts || 0) + 1;
+    if (entry.attempts > 10) {
+      entry.blockUntil = Date.now() + 15 * 60 * 1000;
+      otpStore.set(email, entry);
+      return res.status(429).json({ ok: false, message: 'Too many attempts' });
+    }
+
+    if (String(otp).trim() === String(entry.otp)) {
+      otpStore.delete(email);
+      return res.json({ ok: true, message: 'OTP verified' });
+    } else {
+      otpStore.set(email, entry);
+      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    }
+  } catch (err) {
+    console.error('verify-otp error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+/**
+ * Profile Extraction endpoint - Extract user details from uploaded document using Gemini AI
+ * Purpose: Extracts profile information from uploaded documents (PDF/images) using Google Gemini AI
+ * POST /api/extract-profile
+ * @param {Object} req.file - Uploaded document file (via multer)
+ * @returns {Object} JSON response with extracted profile data
+ */
+// POST /api/extract-profile - Extract user details from uploaded document using Gemini AI
+app.post('/api/extract-profile', upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file)
+      return res.status(400).json({ ok: false, message: 'No document uploaded' });
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey)
+      return res.status(500).json({ ok: false, message: 'Gemini API key not configured' });
+
+    const base64Data = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+    const prompt = `You are a JSON extractor for a matrimonial registration form (HeavenMatch).
+Return ONLY a single valid JSON object (no surrounding text) with these exact keys (use null if not present):
+
+{
+  "firstName": "First name or null",
+  "lastName": "Last name or null",
+  "fullName": "Full name or null",
+  "dateOfBirth": "DD/MM/YYYY or null",
+  "age": "numeric age or null",
+  "gender": "Female/Male/Other or null",
+  "maritalStatus": "Single/Divorced/Widowed or null",
+  "email": "email or null",
+  "phone": "phone number or null",
+  "education": "highest qualification or null",
+  "profession": "job title or null",
+  "income": "annual income or null",
+  "location": "city, state or null",
+  "religion": "or null",
+  "community": "or null",
+  "caste": "or null",
+  "motherTongue": "or null",
+  "familyType": "Nuclear/Joint or null",
+  "noOfSiblings": "integer or null",
+  "height": "e.g. 170 cm or 5'7\" or null",
+  "weight": "e.g. 70 kg or null",
+  "hobbies": "comma separated or short sentence or null",
+  "aboutMe": "short bio or null",
+  "partnerPreferences": "short text or null"
+}`;
+
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64Data } },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0.0, maxOutputTokens: 2048 },
+    };
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error:', errorText);
+      return res
+        .status(500)
+        .json({ ok: false, message: 'AI processing failed', error: errorText });
+    }
+
+    const data = await response.json();
+    const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!generatedText)
+      return res
+        .status(500)
+        .json({ ok: false, message: 'Invalid AI response structure' });
+
+    let extracted;
+    try {
+      const cleaned = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+      extracted = JSON.parse(cleaned);
+    } catch (err) {
+      console.error('JSON parse error:', err, generatedText);
+      return res
+        .status(500)
+        .json({ ok: false, message: 'Failed to parse AI JSON', raw: generatedText });
+    }
+
+    const toNullIfEmpty = (v) =>
+      !v || (typeof v === 'string' && v.trim() === '') ? null : v;
+    const parseIntSafe = (v) => {
+      const num = parseInt(String(v).match(/\d+/)?.[0] || '');
+      return isNaN(num) ? null : num;
+    };
+    const ddmmyyyyToIso = (d) => {
+      const m = d?.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+      return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+    };
+
+    const e = extracted || {};
+    const fullName = toNullIfEmpty(e.fullName);
+    let firstName = toNullIfEmpty(e.firstName);
+    let lastName = toNullIfEmpty(e.lastName);
+    if ((!firstName || !lastName) && fullName) {
+      const parts = fullName.split(/\s+/);
+      firstName = parts[0] || null;
+      lastName = parts.slice(1).join(' ') || null;
+    }
+
+    const normalized = {
+      firstName,
+      lastName,
+      fullName: fullName || `${firstName || ''} ${lastName || ''}`.trim() || null,
+      dateOfBirth: toNullIfEmpty(e.dateOfBirth),
+      dobIso: e.dateOfBirth ? ddmmyyyyToIso(e.dateOfBirth) : null,
+      age: parseIntSafe(e.age),
+      gender: toNullIfEmpty(e.gender),
+      maritalStatus: toNullIfEmpty(e.maritalStatus),
+      email: toNullIfEmpty(e.email),
+      phone: toNullIfEmpty(e.phone),
+      education: toNullIfEmpty(e.education),
+      profession: toNullIfEmpty(e.profession),
+      income: toNullIfEmpty(e.income),
+      location: toNullIfEmpty(e.location),
+      religion: toNullIfEmpty(e.religion),
+      community: toNullIfEmpty(e.community),
+      caste: toNullIfEmpty(e.caste),
+      motherTongue: toNullIfEmpty(e.motherTongue),
+      familyType: toNullIfEmpty(e.familyType),
+      noOfSiblings: parseIntSafe(e.noOfSiblings),
+      height: toNullIfEmpty(e.height),
+      weight: toNullIfEmpty(e.weight),
+      hobbies: toNullIfEmpty(e.hobbies),
+      aboutMe: toNullIfEmpty(e.aboutMe),
+      partnerPreferences: toNullIfEmpty(e.partnerPreferences),
+    };
+
+    return res.json({
+      ok: true,
+      message: 'Profile extracted successfully',
+      raw: extracted,
+      data: normalized,
+    });
+  } catch (err) {
+    console.error('extract-profile error:', err);
+    return res
+      .status(500)
+      .json({ ok: false, message: 'Server error', error: err.message });
+  }
+});
+
+
 
 app.post('/api/contact/submit', submissionLimiter, requireCsrfToken, (req, res) => {
   const { honeypot, ...payload } = req.body || {};
@@ -1572,20 +1860,46 @@ app.listen(PORT, () => {
   console.log(`📍 Server: http://localhost:${PORT}`);
   console.log(`🤖 AI Provider: ${AI_PROVIDER.toUpperCase()}`);
   console.log(`🧠 AI Model: ${AI_MODEL}`);
-  console.log(`🔑 API Key: ${AI_API_KEY ? '✅ Loaded' : '❌ Not found'}`);
+  console.log(`🔑 AI API Key: ${AI_API_KEY ? '✅ Loaded' : '❌ Not found'}`);
+  console.log(`📧 Email Service: ${process.env.SMTP_HOST ? '✅ Configured' : '❌ Not configured'}`);
+  console.log(`📄 Document Extraction: ${process.env.GEMINI_API_KEY ? '✅ Gemini Ready' : '❌ Not configured'}`);
   console.log(`🛡️  Security Stack:`);
   console.log(`   ├─ Helmet + CSP allowlist`);
   console.log(`   ├─ CSRF tokens & cookie binding`);
   console.log(`   ├─ Advanced bot timing + honeypot checks`);
   console.log(`   ├─ Prompt injection detection`);
-  console.log(`   └─ Rate limiting (Express & adaptive)`);
+  console.log(`   ├─ Rate limiting (Express & adaptive)`);
+  console.log(`   ├─ OTP verification system`);
+  console.log(`   └─ File upload security (multer)`);
+  console.log(`📋 Available Endpoints:`);
+  console.log(`   ├─ POST /api/send-otp - Send OTP to email`);
+  console.log(`   ├─ POST /api/verify-otp - Verify OTP`);
+  console.log(`   ├─ POST /api/extract-profile - Extract profile from document`);
+  console.log(`   ├─ POST /api/chat - AI chat endpoint`);
+  console.log(`   └─ ... and more AI endpoints`);
   console.log(`${'='.repeat(60)}\n`);
 
   if (!AI_API_KEY) {
-    console.log(`⚠️  Setup Instructions:`);
+    console.log(`⚠️  AI Setup Instructions:`);
     console.log(`   1. Obtain an API key (e.g., https://openrouter.ai/keys).`);
     console.log(`   2. Add to .env: REACT_APP_AI_API_KEY=your_key_here`);
     console.log(`   3. Restart server: npm run dev\n`);
+  }
+
+  if (!process.env.SMTP_HOST) {
+    console.log(`⚠️  Email Setup Instructions:`);
+    console.log(`   1. Configure SMTP settings in .env:`);
+    console.log(`      SMTP_HOST=your_smtp_host`);
+    console.log(`      SMTP_PORT=587`);
+    console.log(`      SMTP_USER=your_email`);
+    console.log(`      SMTP_PASS=your_password`);
+    console.log(`      FROM_EMAIL=your_from_email\n`);
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    console.log(`⚠️  Gemini Setup Instructions:`);
+    console.log(`   1. Obtain Gemini API key from Google AI Studio`);
+    console.log(`   2. Add to .env: GEMINI_API_KEY=your_key_here\n`);
   }
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
