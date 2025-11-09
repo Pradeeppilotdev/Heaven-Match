@@ -1,14 +1,29 @@
 {
   "files": {
-    "main.css": "/static/css/main.2a14d737.css",
-    "main.js": "/static/js/main.b0b9f221.js",
+    "main.css": "/static/css/main.b4f0246b.css",
+    "main.js": "/static/js/main.d9e92fba.js",
+    "static/media/12.png": "/static/media/12.50faa59cfeef1f72f062.png",
+    "static/media/13.png": "/static/media/13.05e2a138abfe88d41924.png",
+    "static/media/2.png": "/static/media/2.197605446522dede11b2.png",
+    "static/media/9.png": "/static/media/9.9c094c8696357b76f640.png",
+    "static/media/15.png": "/static/media/15.462f452706b5dd8ab2e2.png",
+    "static/media/3.png": "/static/media/3.7350ca46cbfb820cceef.png",
+    "static/media/7.png": "/static/media/7.7b7f27d04879e827d5e2.png",
+    "static/media/14.png": "/static/media/14.1a4c019e2264a3ad072c.png",
+    "static/media/10.png": "/static/media/10.5671504ada69b1b88441.png",
+    "static/media/8.png": "/static/media/8.25d894d3e2ba56a92cc1.png",
+    "static/media/11.png": "/static/media/11.0b2e01e969cfd3e86f75.png",
+    "static/media/6.png": "/static/media/6.4cc31504be0f885d0516.png",
+    "static/media/5.png": "/static/media/5.b09a130d6d3b0cabb387.png",
+    "static/media/1.png": "/static/media/1.2d17c9de8fd7c4e2fab8.png",
+    "static/media/4.png": "/static/media/4.b0fdd0a01693829daa8e.png",
     "static/media/axios.cjs": "/static/media/axios.f821c7d7f6a2aa337c69.cjs",
     "index.html": "/index.html",
-    "main.2a14d737.css.map": "/static/css/main.2a14d737.css.map",
-    "main.b0b9f221.js.map": "/static/js/main.b0b9f221.js.map"
+    "main.b4f0246b.css.map": "/static/css/main.b4f0246b.css.map",
+    "main.d9e92fba.js.map": "/static/js/main.d9e92fba.js.map"
   },
   "entrypoints": [
-    "static/css/main.2a14d737.css",
-    "static/js/main.b0b9f221.js"
+    "static/css/main.b4f0246b.css",
+    "static/js/main.d9e92fba.js"
   ]
 }

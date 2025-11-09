@@ -2,9 +2,9 @@
 // Showcases the AI's ability to generate dating icebreakers using the Gemini API.
 import React, { useState } from 'react';
 import { Wand2, Sparkles, Loader2 } from 'lucide-react';
-import Card from './Card'; 
+import Card from './Card';
 import Button from './Button';
-import { fetchWithRetry, apiQueue, handleAPIError } from './apiUtils';
+import { apiQueue, handleAPIError } from './apiUtils';
 
 /**
  * Renders an interactive demo for the AI Icebreaker feature, fetching content from the Gemini API.

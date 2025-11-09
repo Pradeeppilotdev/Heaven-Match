@@ -37,7 +37,7 @@ const maskAadhaar = (aadhaar) => {
 const sanitizeText = (text = '') => {
   if (!text) return '';
   let clean = text.replace(/<[^>]*>?/gm, '');
-  clean = clean.replace(/[<>"'`=\/\\(){}\[\]:;&%^*#]/g, '');
+  clean = clean.replace(/[<>"'`=/\\(){}[\]:;&%^*#]/g, '');
   return clean;
 };
 
@@ -352,7 +352,7 @@ const ExtractedProfileDetails = ({ ep = {}, onDiscard, onEdit }) => {
 }
 
     fetchUserData()
-  }, [])
+  }, [navigate])
 
   // age helpers, DOB limits
   const calcAgeFromDob = (dobStr) => {
@@ -1048,7 +1048,7 @@ if (!accessToken) {
   } finally {
     setIsSubmitting(false)
   }
-}, [mode, validate, uploadForm, manualForm, profilePicFile, extractedProfile, resetAllForms])
+}, [mode, validate, uploadForm, manualForm, profilePicFile, extractedProfile, resetAllForms, scrollToFirstError])
 
   const closeSuccessPopup = useCallback(() => {
   setShowPopup(false)
@@ -1074,7 +1074,7 @@ if (!accessToken) {
       ["HEAVENMATCH REGISTRATION TEMPLATE"],
       ["Please fill in your details below."],
       [],
-      ["First Name"],["Last Name"],["Dob"] ["Age"], ["Gender(Female,Male,Other)"], ["Marital Status(Single,Divorced,Widowed)"], ["Email"], ["Phone"],
+      ["First Name"],["Last Name"],["Dob"],["Age"], ["Gender(Female,Male,Other)"], ["Marital Status(Single,Divorced,Widowed)"], ["Email"], ["Phone"],
       ["Education"], ["Profession"], ["Income"], ["Location"],
       ["Religion"], ["Community"], ["Caste"], ["Mother Tongue"],
       ["Family Type(Nuclear,Joint)"], ["No. of Siblings"],

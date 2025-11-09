@@ -16,6 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(location.state?.message || '');
+  // eslint-disable-next-line no-unused-vars
   const [otpExpiry, setOtpExpiry] = useState(null);
   const [stars, setStars] = useState([]);
 

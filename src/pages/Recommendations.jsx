@@ -1,6 +1,6 @@
 //recommendations
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { mockProfiles } from "../data/mockUser";
 import { fetchProfiles } from "../services/api";
 import MatchCard from "../components/MatchCard";
@@ -75,30 +75,27 @@ export default function Recommendations() {
   const [viewingProfileType, setViewingProfileType] = useState(null); // 'liked' or 'skipped'
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState('');
   const [currentLoadingQuote, setCurrentLoadingQuote] = useState('');
-  const [quoteIndex, setQuoteIndex] = useState(0);
   const [isQuoteFading, setIsQuoteFading] = useState(false);
 
   // Helper function to filter out skipped profiles
-  const filterSkippedProfiles = (profileList) => {
+  const filterSkippedProfiles = useCallback((profileList) => {
     const skippedIds = skippedProfiles.map(p => p.id);
     return profileList.filter(profile => !skippedIds.includes(profile.id));
-  };
+  }, [skippedProfiles]);
 
   // Rotate quotes every 5 seconds when loading with smooth fade transition
   useEffect(() => {
     if (!loading) return;
-    
+
+    let currentIndex = 0;
     const quoteInterval = setInterval(() => {
       // Fade out current quote
       setIsQuoteFading(true);
-      
+
       // After fade-out completes, change quote and fade in
       setTimeout(() => {
-        setQuoteIndex((prev) => {
-          const nextIndex = (prev + 1) % loadingQuotes.length;
-          setCurrentLoadingQuote(loadingQuotes[nextIndex]);
-          return nextIndex;
-        });
+        currentIndex = (currentIndex + 1) % loadingQuotes.length;
+        setCurrentLoadingQuote(loadingQuotes[currentIndex]);
         setIsQuoteFading(false);
       }, 500); // Half of the fade animation duration
     }, 5000);
@@ -120,9 +117,10 @@ export default function Recommendations() {
     if (!showWelcome) {
     loadProfiles();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRealData, showWelcome, skippedProfiles]);
 
-  const loadProfiles = async (forceRefresh = false) => {
+  const loadProfiles = useCallback(async (forceRefresh = false) => {
     // Security: Detect suspicious activity
     if (detectSuspiciousActivity('load_profiles')) {
       setError('Suspicious activity detected. Please refresh the page and try again.');
@@ -164,7 +162,6 @@ export default function Recommendations() {
     // Set random loading message and initial quote
     setCurrentLoadingMessage(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
     setCurrentLoadingQuote(loadingQuotes[0]);
-    setQuoteIndex(0);
 
     try {
     if (useRealData) {
@@ -204,9 +201,9 @@ export default function Recommendations() {
       // Don't fall back to mockProfiles - show the error instead
       setProfiles([]);
     }
-    
+
     setLoading(false);
-  };
+  }, [useRealData, filterSkippedProfiles]);
 
   const handleInterest = (id, isLiked) => {
     // Security: Detect suspicious activity
