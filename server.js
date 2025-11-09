@@ -559,7 +559,123 @@ app.get('/api/csrf-token', (req, res) => {
 // ============================================================================
 
 /**
- * Signup - Create new user account
+ * Simple Signup - Create new user account (JWT-based, no OTP)
+ * POST /api/signup
+ */
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { email, name, password, phone_number, date_of_birth } = req.body;
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid email address is required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    if (users.has(normalizedEmail)) {
+      return res.status(400).json({
+        error: 'Email already registered. Please login instead.'
+      });
+    }
+
+    // Create new user
+    users.set(normalizedEmail, {
+      email: normalizedEmail,
+      name: name ? name.trim() : '',
+      password: password, // In production, hash this!
+      phone_number: phone_number || '',
+      date_of_birth: date_of_birth || '',
+      secret: null,
+      qrSetup: false,
+      verified: true, // Auto-verify for simple auth
+      createdAt: new Date().toISOString()
+    });
+
+    console.log(`✅ New user registered: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Account created successfully. Please login to continue.',
+      user: { email: normalizedEmail, name: name || '' }
+    });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to create account. Please try again.'
+    });
+  }
+});
+
+/**
+ * Simple Login - Email/Password authentication (JWT-based, no OTP)
+ * POST /api/login
+ */
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = users.get(normalizedEmail);
+
+    // Check if user exists
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid email or password',
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Verify password (in production, compare hashed passwords)
+    if (user.password !== password) {
+      return res.status(401).json({
+        error: 'Invalid email or password',
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Create session token
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    sessionStore.set(sessionToken, {
+      email: normalizedEmail,
+      timestamp: Date.now()
+    });
+
+    // Set httpOnly cookie
+    res.cookie('hm_session', sessionToken, {
+      httpOnly: true,
+      secure: NODE_ENV === 'production',
+      sameSite: NODE_ENV === 'production' ? 'Strict' : 'Lax',
+      maxAge: SESSION_DURATION
+    });
+
+    console.log(`✅ User logged in: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      token: sessionToken,
+      email: normalizedEmail,
+      name: user.name || '',
+      message: 'Login successful'
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to log in. Please try again.'
+    });
+  }
+});
+
+/**
+ * Signup - Create new user account (OTP-based)
  * POST /api/auth/signup
  */
 app.post('/api/auth/signup', async (req, res) => {

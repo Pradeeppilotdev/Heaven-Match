@@ -9,29 +9,14 @@ export const AuthProvider = ({ children }) => {
   const [sessionToken, setSessionToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(async () => {
-    try {
-      if (sessionToken) {
-        await fetch(withBackendURL('/api/auth/logout'), {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-
+  const logout = useCallback(() => {
     // Clear local state
     localStorage.removeItem('hm_token');
     localStorage.removeItem('hm_email');
     setSessionToken(null);
     setUser(null);
     setIsAuthenticated(false);
-  }, [sessionToken]);
+  }, []);
 
   // Check authentication on mount
   useEffect(() => {
@@ -42,31 +27,11 @@ export const AuthProvider = ({ children }) => {
       setSessionToken(token);
       setUser({ email: userEmail });
       setIsAuthenticated(true);
-
-      // Validate session with server
-      fetch(withBackendURL('/api/auth/session'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      })
-        .then(res => {
-          if (!res.ok) {
-            // Session invalid, clear local storage
-            logout();
-          }
-        })
-        .catch(() => {
-          // Network error, keep local session for now
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      setLoading(false);
     } else {
       setLoading(false);
     }
-  }, [logout]);
+  }, []);
 
   const login = (userData, token) => {
     localStorage.setItem('hm_token', token);

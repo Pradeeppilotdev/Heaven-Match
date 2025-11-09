@@ -33,7 +33,10 @@ const Signup = () => {
       const response = await fetch(withBackendURL('/api/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          date_of_birth: formData.dob
+        })
       });
 
       const data = await response.json();
