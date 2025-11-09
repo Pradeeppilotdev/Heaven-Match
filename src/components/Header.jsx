@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import Button from './UI/Button'; 
+import Button from './ui/Button'; 
 
 /**
  * Renders the sticky application header. Features dynamic styling on scroll and responsive navigation.
