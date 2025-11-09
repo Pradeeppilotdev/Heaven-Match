@@ -19,7 +19,10 @@
     "react-markdown": "^8.0.7",
     "react-router-dom": "^7.9.5",
     "react-scripts": "5.0.1",
-    "react-transition-group": "^4.4.5"
+    "react-transition-group": "^4.4.5",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.10",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
