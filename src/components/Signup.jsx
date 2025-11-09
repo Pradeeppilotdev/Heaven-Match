@@ -5,12 +5,24 @@ import { withBackendURL } from '../utils/backend';
 import './Signup.css';
 
 const Signup = () => {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone_number: '',
+    password: '',
+    dob: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stars, setStars] = useState([]);
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -18,10 +30,10 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await fetch(withBackendURL('/api/auth/signup'), {
+      const response = await fetch(withBackendURL('/api/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name })
+        body: JSON.stringify(formData)
       });
 
       const data = await response.json();
@@ -31,7 +43,7 @@ const Signup = () => {
         navigate('/login', {
           state: {
             message: data.message || 'Account created! Please login.',
-            email: email
+            email: formData.email
           }
         });
       } else {
@@ -90,6 +102,7 @@ const Signup = () => {
         <ChurchArch className="signup-arch-decoration" variant="inverse" />
         <ChurchArch className="signup-arch-left" variant="inverse" />
         <ChurchArch className="signup-arch-right" variant="inverse" />
+
         <div className="signup-header">
           <h1>Create Your Account</h1>
           <p>Join HeavenMatch and find your perfect match</p>
@@ -99,12 +112,27 @@ const Signup = () => {
 
         <form onSubmit={handleSignup} className="signup-form">
           <div className="form-group">
+            <label htmlFor="name">Full Name *</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Your Full Name"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="email">Email Address *</label>
             <input
               type="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="your@email.com"
               required
               disabled={loading}
@@ -112,13 +140,43 @@ const Signup = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="name">Full Name (Optional)</label>
+            <label htmlFor="phone_number">Phone Number *</label>
             <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your Name"
+              type="tel"
+              id="phone_number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              placeholder="+1234567890"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password *</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Create a strong password"
+              required
+              disabled={loading}
+              minLength="8"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="dob">Date of Birth *</label>
+            <input
+              type="date"
+              id="dob"
+              name="dob"
+              value={formData.dob}
+              onChange={handleChange}
+              required
               disabled={loading}
             />
           </div>
