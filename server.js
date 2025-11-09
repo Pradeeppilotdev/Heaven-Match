@@ -1147,7 +1147,7 @@ app.post('/api/auth/logout', requireAuth, (req, res) => {
   }
 });
 
-app.post('/api/contact/submit', submissionLimiter, requireCsrfToken, (req, res) => {
+app.post('/api/contact/submit', submissionLimiter, (req, res) => {
   const { honeypot, ...payload } = req.body || {};
 
   if (honeypot && honeypot.trim().length > 0) {

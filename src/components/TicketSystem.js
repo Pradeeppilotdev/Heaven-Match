@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import './TicketSystem.css';
 import { getBackendURL } from '../utils/backend';
-import useCsrfToken from '../hooks/useCsrfToken';
 
 const issueTopics = [
   'Account Issues',
@@ -38,16 +37,9 @@ const TicketSystem = () => {
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [honeypot, setHoneypot] = useState('');
-  const { csrfToken, csrfError, refreshCsrfToken } = useCsrfToken();
   const [ticketErrors, setTicketErrors] = useState({});
 
   const showMessage = (type, message) => setFeedback({ type, message });
-
-  useEffect(() => {
-    if (csrfError) {
-      showMessage('error', csrfError);
-    }
-  }, [csrfError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,11 +108,6 @@ const TicketSystem = () => {
       return;
     }
 
-    if (!csrfToken) {
-      showMessage('error', 'Security token missing. Please refresh and try again.');
-      return;
-    }
-
     setIsSubmitting(true);
     showMessage(null, '');
 
@@ -138,8 +125,7 @@ const TicketSystem = () => {
       const response = await fetch(`${getBackendURL()}/api/contact/submit`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(payload)

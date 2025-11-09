@@ -7,7 +7,6 @@
 import React, { useEffect, useState } from 'react';
 import './ContactForm.css';
 import { getBackendURL } from '../utils/backend';
-import useCsrfToken from '../hooks/useCsrfToken';
 
 const normalizeDigits = (value = '') => value.replace(/[^0-9]/g, '');
 
@@ -24,7 +23,6 @@ const ContactForm = ({ initialData }) => {
   const [status, setStatus] = useState({ type: null, message: '' });
   const [honeypot, setHoneypot] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { csrfToken, csrfError, refreshCsrfToken } = useCsrfToken();
 
   const showMessage = (type, message) => setStatus({ type, message });
 
@@ -40,11 +38,6 @@ const ContactForm = ({ initialData }) => {
     }
   }, [initialData]);
 
-  useEffect(() => {
-    if (csrfError) {
-      showMessage('error', csrfError);
-    }
-  }, [csrfError]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -118,11 +111,6 @@ const ContactForm = ({ initialData }) => {
       return;
     }
 
-    if (!csrfToken) {
-      showMessage('error', 'Security token missing. Please refresh the page and try again.');
-      return;
-    }
-
     setIsSubmitting(true);
     showMessage(null, '');
 
@@ -140,8 +128,7 @@ const ContactForm = ({ initialData }) => {
       const response = await fetch(`${getBackendURL()}/api/contact/submit`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(payload)
@@ -165,7 +152,6 @@ const ContactForm = ({ initialData }) => {
       });
       setErrors({});
       setHoneypot('');
-      refreshCsrfToken();
     } catch (error) {
       console.error('Contact form submission error:', error);
       showMessage('error', error.message || 'Something went wrong. Please try again in a moment.');
