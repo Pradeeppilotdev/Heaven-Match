@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChurchArch } from './ui/ChurchArch';
+import { withBackendURL } from '../utils/backend';
 import './Signup.css';
 
 const Signup = () => {
@@ -17,7 +18,7 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/signup', {
+      const response = await fetch(withBackendURL('/api/auth/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name })

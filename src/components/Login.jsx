@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ChurchArch } from './ui/ChurchArch';
+import { withBackendURL } from '../utils/backend';
 import './Login.css';
 
 const Login = () => {
@@ -28,7 +29,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/request-otp', {
+      const response = await fetch(withBackendURL('/api/auth/request-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -58,7 +59,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+      const response = await fetch(withBackendURL('/api/auth/verify-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -93,7 +94,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login-qr', {
+      const response = await fetch(withBackendURL('/api/auth/login-qr'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

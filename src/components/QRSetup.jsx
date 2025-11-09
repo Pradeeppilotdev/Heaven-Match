@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { withBackendURL } from '../utils/backend';
 import './QRSetup.css';
 
 const QRSetup = ({ onClose, onSuccess }) => {
@@ -22,7 +23,7 @@ const QRSetup = ({ onClose, onSuccess }) => {
 
     try {
       const token = localStorage.getItem('hm_token');
-      const response = await fetch('http://localhost:3001/api/auth/setup-qr', {
+      const response = await fetch(withBackendURL('/api/auth/setup-qr'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,7 +56,7 @@ const QRSetup = ({ onClose, onSuccess }) => {
 
     try {
       const token = localStorage.getItem('hm_token');
-      const response = await fetch('http://localhost:3001/api/auth/verify-qr-setup', {
+      const response = await fetch(withBackendURL('/api/auth/verify-qr-setup'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

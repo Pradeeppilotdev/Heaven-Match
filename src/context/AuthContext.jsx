@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { withBackendURL } from '../utils/backend';
 
 const AuthContext = createContext(null);
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       if (sessionToken) {
-        await fetch('http://localhost:3001/api/auth/logout', {
+        await fetch(withBackendURL('/api/auth/logout'), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${sessionToken}`,
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
 
       // Validate session with server
-      fetch('http://localhost:3001/api/auth/session', {
+      fetch(withBackendURL('/api/auth/session'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

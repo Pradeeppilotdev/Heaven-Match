@@ -1,4 +1,9 @@
 export const getBackendURL = () => {
+  // Use environment variable if set (works for both local and production)
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+
   if (process.env.REACT_APP_PROXY_URL) {
     return process.env.REACT_APP_PROXY_URL;
   }
@@ -6,9 +11,9 @@ export const getBackendURL = () => {
   const hostname = window.location.hostname;
 
   if (process.env.NODE_ENV === 'production') {
-    const origin = window.location.origin;
-    const baseUrl = origin.includes(':') ? origin.split(':').slice(0, -1).join(':') : origin;
-    return `${baseUrl}:3001`;
+    // In production without REACT_APP_API_URL, return empty string
+    // This will cause relative URLs to be used
+    return '';
   }
 
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
