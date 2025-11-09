@@ -27,6 +27,11 @@ export const getBackendURL = () => {
   return 'http://localhost:3001';
 };
 
-export const withBackendURL = (path) => `${getBackendURL()}${path}`;
+export const withBackendURL = (path) => {
+  const baseURL = getBackendURL();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanBase = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
+  return `${cleanBase}${cleanPath}`;
+};
 
 
