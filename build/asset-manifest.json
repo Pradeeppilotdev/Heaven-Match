@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.b4f0246b.css",
-    "main.js": "/static/js/main.d9e92fba.js",
+    "main.js": "/static/js/main.83c099f1.js",
     "static/media/12.png": "/static/media/12.50faa59cfeef1f72f062.png",
     "static/media/13.png": "/static/media/13.05e2a138abfe88d41924.png",
     "static/media/2.png": "/static/media/2.197605446522dede11b2.png",
@@ -20,10 +20,10 @@
     "static/media/axios.cjs": "/static/media/axios.f821c7d7f6a2aa337c69.cjs",
     "index.html": "/index.html",
     "main.b4f0246b.css.map": "/static/css/main.b4f0246b.css.map",
-    "main.d9e92fba.js.map": "/static/js/main.d9e92fba.js.map"
+    "main.83c099f1.js.map": "/static/js/main.83c099f1.js.map"
   },
   "entrypoints": [
     "static/css/main.b4f0246b.css",
-    "static/js/main.d9e92fba.js"
+    "static/js/main.83c099f1.js"
   ]
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +7,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(async () => {
+    try {
+      if (sessionToken) {
+        await fetch('http://localhost:3001/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    // Clear local state
+    localStorage.removeItem('hm_token');
+    localStorage.removeItem('hm_email');
+    setSessionToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+  }, [sessionToken]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -41,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   const login = (userData, token) => {
     localStorage.setItem('hm_token', token);
@@ -49,30 +73,6 @@ export const AuthProvider = ({ children }) => {
     setSessionToken(token);
     setUser(userData);
     setIsAuthenticated(true);
-  };
-
-  const logout = async () => {
-    try {
-      if (sessionToken) {
-        await fetch('http://localhost:3001/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-
-    // Clear local state
-    localStorage.removeItem('hm_token');
-    localStorage.removeItem('hm_email');
-    setSessionToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
   };
 
   const value = {

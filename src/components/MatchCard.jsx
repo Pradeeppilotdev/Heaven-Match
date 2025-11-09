@@ -27,7 +27,7 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
   const imageRef = useRef(null);
   const cardRef = useRef(null);
   // Accessing the new AI-enriched fields
-  const { name, age, location, image, profession, interests = [], bio, income, education, personality_tags } = profile;
+  const { name, age, location, image, profession, interests = [], bio, income, education } = profile;
 
   // Sync liked state when prop changes
   useEffect(() => {
@@ -51,17 +51,18 @@ const MatchCard = ({ profile, onInterest, onSkip, connectedProfileId, onToggleCo
       return false;
     };
 
-    if (cardRef.current) {
-      cardRef.current.addEventListener('contextmenu', handleContextMenu);
-      cardRef.current.addEventListener('dragstart', handleDragStart);
-      cardRef.current.addEventListener('selectstart', handleSelectStart);
+    const cardElement = cardRef.current;
+    if (cardElement) {
+      cardElement.addEventListener('contextmenu', handleContextMenu);
+      cardElement.addEventListener('dragstart', handleDragStart);
+      cardElement.addEventListener('selectstart', handleSelectStart);
     }
 
     return () => {
-      if (cardRef.current) {
-        cardRef.current.removeEventListener('contextmenu', handleContextMenu);
-        cardRef.current.removeEventListener('dragstart', handleDragStart);
-        cardRef.current.removeEventListener('selectstart', handleSelectStart);
+      if (cardElement) {
+        cardElement.removeEventListener('contextmenu', handleContextMenu);
+        cardElement.removeEventListener('dragstart', handleDragStart);
+        cardElement.removeEventListener('selectstart', handleSelectStart);
       }
     };
   }, []);
