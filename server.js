@@ -5,12 +5,160 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const multer = require('multer');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT_SERVER || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// ============================================================================
+// AUTHENTICATION SYSTEM - OTP & QR CODE (TOTP)
+// ============================================================================
+
+// Authentication Constants
+const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const OTP_MAX_ATTEMPTS = 3;
+const OTP_RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
+const OTP_RATE_LIMIT_MAX = 3; // 3 OTP requests per 5 minutes
+
+// Authentication Data Structures (In-memory storage)
+const users = new Map(); // email -> { email, secret, qrSetup, verified, createdAt }
+const otpStore = new Map(); // email -> { otp, timestamp, attempts, requestCount, lastRequestTime }
+const sessionStore = new Map(); // token -> { email, timestamp }
+const pendingQRSetup = new Map(); // email -> { tempSecret, timestamp }
+
+// Email Service Configuration
+let emailTransporter = null;
+
+try {
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+    emailTransporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+
+    // Verify email service
+    emailTransporter.verify((error) => {
+      if (error) {
+        console.error('❌ Email service error:', error.message);
+        emailTransporter = null;
+      } else {
+        console.log('✅ Email service ready');
+      }
+    });
+  } else {
+    console.warn('⚠️  Email service not configured. OTP will be logged to console only.');
+  }
+} catch (error) {
+  console.error('❌ Email transporter setup error:', error.message);
+  emailTransporter = null;
+}
+
+// Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send OTP Email
+const sendOTPEmail = async (email, otp) => {
+  const mailOptions = {
+    from: `"HeavenMatch Support" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'Your HeavenMatch Login Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #8b5cf6;">Your HeavenMatch Login Code</h2>
+        <div style="background: #f5f5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <h1 style="color: #8b5cf6; letter-spacing: 8px; font-size: 32px; margin: 0;">${otp}</h1>
+        </div>
+        <p style="color: #666;">This code expires in 5 minutes.</p>
+        <p style="color: #666;">If you didn't request this code, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="color: #999; font-size: 12px;">HeavenMatch - Where Hearts Connect</p>
+      </div>
+    `
+  };
+
+  if (emailTransporter) {
+    try {
+      await emailTransporter.sendMail(mailOptions);
+      console.log(`✅ OTP sent to ${email}`);
+    } catch (error) {
+      console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
+      throw new Error('Failed to send email. Please try again.');
+    }
+  } else {
+    // Development mode: log OTP to console
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🔐 OTP for ${email}: ${otp}`);
+    console.log(`${'='.repeat(60)}\n`);
+  }
+};
+
+// Authentication Middleware
+const requireAuth = (req, res, next) => {
+  const token = req.headers['authorization']?.replace('Bearer ', '') ||
+                req.cookies?.hm_session;
+
+  if (!token) {
+    return res.status(401).json({
+      error: 'UNAUTHORIZED',
+      authRequired: true,
+      message: 'Authentication required. Please log in.'
+    });
+  }
+
+  const session = sessionStore.get(token);
+
+  if (!session || Date.now() - session.timestamp > SESSION_DURATION) {
+    sessionStore.delete(token);
+    return res.status(401).json({
+      error: 'SESSION_EXPIRED',
+      authRequired: true,
+      message: 'Your session has expired. Please log in again.'
+    });
+  }
+
+  // Refresh session timestamp
+  session.timestamp = Date.now();
+  req.user = { email: session.email };
+  next();
+};
+
+// Cleanup old sessions, OTPs, and pending QR setups (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+
+  // Clean expired sessions
+  for (const [token, session] of sessionStore.entries()) {
+    if (now - session.timestamp > SESSION_DURATION) {
+      sessionStore.delete(token);
+    }
+  }
+
+  // Clean expired OTPs
+  for (const [email, otpData] of otpStore.entries()) {
+    if (now - otpData.timestamp > OTP_EXPIRY) {
+      otpStore.delete(email);
+    }
+  }
+
+  // Clean expired pending QR setups
+  for (const [email, qrData] of pendingQRSetup.entries()) {
+    if (now - qrData.timestamp > 10 * 60 * 1000) { // 10 minutes
+      pendingQRSetup.delete(email);
+    }
+  }
+}, 10 * 60 * 1000).unref();
+
 app.get('/api/generate-token', (req, res) => {
   const token = generateFormToken(req);
   const honeypot = generateHoneypotHTML();
@@ -30,7 +178,7 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
-  'http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://localhost:5174,https://heavenmatch.com,https://www.heavenmatch.com'
+  'http://localhost:3000,http://127.0.0.1:3000,https://heavenmatch.com,https://www.heavenmatch.com'
 )
   .split(',')
   .map(origin => origin.trim())
@@ -249,37 +397,6 @@ const logSecurityEvent = (req, validation) => {
   });
 };
 
-// Configure multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF and images allowed.'));
-    }
-  }
-});
-
-// Simple in-memory store for OTPs
-const otpStore = new Map();
-
-// Configure nodemailer transport via environment variables
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
-
-// Helper to generate OTP
-const genOtp = () => String(Math.floor(100000 + Math.random() * 900000));
-
 setInterval(() => {
   const now = Date.now();
   for (const [token, data] of formTimestamps.entries()) {
@@ -300,23 +417,12 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000).unref();
 
-// Cleanup loop to purge expired OTPs every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [email, entry] of otpStore.entries()) {
-    if (entry.expiresAt && now > entry.expiresAt + (5 * 60 * 1000)) {
-      otpStore.delete(email);
-    }
-  }
-}, 5 * 60 * 1000).unref();
-
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: false
 }));
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 const securityLogger = (event, details = {}) => {
@@ -448,251 +554,482 @@ app.get('/api/csrf-token', (req, res) => {
   res.json({ token });
 });
 
+// ============================================================================
+// AUTHENTICATION ENDPOINTS
+// ============================================================================
+
 /**
- * OTP Send endpoint
- * Purpose: Sends OTP to user's Gmail address for verification
- * POST /api/send-otp
- * @param {Object} req.body - Request body
- * @param {string} req.body.email - User's Gmail address
- * @returns {Object} JSON response with success status and message
+ * Signup - Create new user account
+ * POST /api/auth/signup
  */
-app.post('/api/send-otp', async (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid email address is required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    if (users.has(normalizedEmail)) {
+      return res.status(400).json({
+        error: 'Email already registered. Please login instead.'
+      });
+    }
+
+    // Create new user
+    users.set(normalizedEmail, {
+      email: normalizedEmail,
+      name: name ? name.trim() : '',
+      secret: null,
+      qrSetup: false,
+      verified: false,
+      createdAt: new Date().toISOString()
+    });
+
+    console.log(`✅ New user registered: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Account created successfully. Please login to continue.',
+      user: { email: normalizedEmail, name: name || '' }
+    });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to create account. Please try again.'
+    });
+  }
+});
+
+/**
+ * Request OTP - Send 6-digit code to email
+ * POST /api/auth/request-otp
+ */
+app.post('/api/auth/request-otp', async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email || !/^[^\s@]+@gmail\.com$/i.test(email)) {
-      return res.status(400).json({ ok: false, message: 'Valid Gmail required' });
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid email address is required' });
     }
 
-    const existing = otpStore.get(email);
-    if (existing && existing.attempts >= 5 && Date.now() < existing.blockUntil) {
-      return res.status(429).json({ ok: false, message: 'Too many attempts. Try later.' });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Rate limiting: max 3 OTP requests per 5 minutes
+    const otpData = otpStore.get(normalizedEmail);
+    const now = Date.now();
+
+    if (otpData) {
+      const timeSinceLastRequest = now - (otpData.lastRequestTime || otpData.timestamp);
+
+      if (timeSinceLastRequest < OTP_RATE_LIMIT_WINDOW) {
+        const requestCount = (otpData.requestCount || 1) + 1;
+
+        if (requestCount > OTP_RATE_LIMIT_MAX) {
+          const waitTime = Math.ceil((OTP_RATE_LIMIT_WINDOW - timeSinceLastRequest) / 1000 / 60);
+          return res.status(429).json({
+            error: 'RATE_LIMIT',
+            message: `Too many OTP requests. Please wait ${waitTime} minute(s) before trying again.`
+          });
+        }
+
+        otpData.requestCount = requestCount;
+        otpData.lastRequestTime = now;
+      } else {
+        // Reset rate limit counter after window expires
+        otpData.requestCount = 1;
+        otpData.lastRequestTime = now;
+      }
     }
 
-    const otp = genOtp();
-    const expiresAt = Date.now() + (2 * 60 * 1000);
-    otpStore.set(email, { otp, expiresAt, attempts: (existing?.attempts || 0), blockUntil: 0 });
+    // Generate new OTP
+    const otp = generateOTP();
 
-    const mailOptions = {
-      from: process.env.FROM_EMAIL || process.env.SMTP_USER,
-      to: email,
-      subject: 'Your HeavenMatch OTP',
-      text: `Your HeavenMatch OTP is ${otp}. It expires in 2 minutes.`,
-      html: `<p>Your HeavenMatch OTP is <strong>${otp}</strong>. It expires in 2 minutes.</p>`
-    };
+    // Store OTP
+    otpStore.set(normalizedEmail, {
+      otp,
+      timestamp: now,
+      attempts: 0,
+      requestCount: otpData?.requestCount || 1,
+      lastRequestTime: now
+    });
 
-    await transporter.sendMail(mailOptions);
+    // Send OTP via email
+    await sendOTPEmail(normalizedEmail, otp);
 
-    const nowStored = otpStore.get(email);
-    nowStored.attempts = (nowStored.attempts || 0) + 1;
-    otpStore.set(email, nowStored);
+    // Create or update user record
+    if (!users.has(normalizedEmail)) {
+      users.set(normalizedEmail, {
+        email: normalizedEmail,
+        secret: null,
+        qrSetup: false,
+        verified: false,
+        createdAt: new Date().toISOString()
+      });
+    }
 
-    return res.json({ ok: true, message: 'OTP sent' });
-  } catch (err) {
-    console.error('send-otp error', err);
-    return res.status(500).json({ ok: false, message: 'Failed to send OTP' });
+    res.json({
+      success: true,
+      message: 'OTP sent to your email. Please check your inbox.',
+      expiresIn: OTP_EXPIRY / 1000 // seconds
+    });
+  } catch (error) {
+    console.error('OTP request error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: error.message || 'Failed to send OTP. Please try again.'
+    });
   }
 });
 
 /**
- * OTP Verify endpoint
- * Purpose: Verifies the OTP sent to user's email
- * POST /api/verify-otp
- * @param {Object} req.body - Request body
- * @param {string} req.body.email - User's Gmail address
- * @param {string} req.body.otp - The OTP code to verify
- * @returns {Object} JSON response with verification status and message
+ * Verify OTP - Validate code and create session
+ * POST /api/auth/verify-otp
  */
-app.post('/api/verify-otp', (req, res) => {
+app.post('/api/auth/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ ok: false, message: 'email & otp required' });
 
-    const entry = otpStore.get(email);
-    if (!entry) return res.status(400).json({ ok: false, message: 'No OTP sent or expired' });
-    if (Date.now() > entry.expiresAt) {
-      otpStore.delete(email);
-      return res.status(400).json({ ok: false, message: 'OTP expired' });
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and OTP are required' });
     }
 
-    entry.attempts = (entry.attempts || 0) + 1;
-    if (entry.attempts > 10) {
-      entry.blockUntil = Date.now() + 15 * 60 * 1000;
-      otpStore.set(email, entry);
-      return res.status(429).json({ ok: false, message: 'Too many attempts' });
+    const normalizedEmail = email.toLowerCase().trim();
+    const otpData = otpStore.get(normalizedEmail);
+
+    if (!otpData) {
+      return res.status(400).json({
+        error: 'INVALID_OTP',
+        message: 'No OTP found. Please request a new one.'
+      });
     }
 
-    if (String(otp).trim() === String(entry.otp)) {
-      otpStore.delete(email);
-      return res.json({ ok: true, message: 'OTP verified' });
-    } else {
-      otpStore.set(email, entry);
-      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    // Check expiry
+    if (Date.now() - otpData.timestamp > OTP_EXPIRY) {
+      otpStore.delete(normalizedEmail);
+      return res.status(400).json({
+        error: 'OTP_EXPIRED',
+        message: 'OTP has expired. Please request a new one.'
+      });
     }
-  } catch (err) {
-    console.error('verify-otp error', err);
-    return res.status(500).json({ ok: false, message: 'Server error' });
+
+    // Check attempts
+    if (otpData.attempts >= OTP_MAX_ATTEMPTS) {
+      otpStore.delete(normalizedEmail);
+      return res.status(400).json({
+        error: 'MAX_ATTEMPTS',
+        message: 'Too many failed attempts. Please request a new OTP.'
+      });
+    }
+
+    // Verify OTP
+    if (otpData.otp !== otp.trim()) {
+      otpData.attempts += 1;
+      const remainingAttempts = OTP_MAX_ATTEMPTS - otpData.attempts;
+
+      return res.status(400).json({
+        error: 'INVALID_OTP',
+        message: `Invalid OTP. ${remainingAttempts} attempt(s) remaining.`,
+        remainingAttempts
+      });
+    }
+
+    // OTP verified successfully - create session
+    otpStore.delete(normalizedEmail);
+
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    sessionStore.set(sessionToken, {
+      email: normalizedEmail,
+      timestamp: Date.now()
+    });
+
+    // Update user as verified
+    const user = users.get(normalizedEmail);
+    if (user) {
+      user.verified = true;
+    }
+
+    // Set httpOnly cookie
+    res.cookie('hm_session', sessionToken, {
+      httpOnly: true,
+      secure: NODE_ENV === 'production',
+      sameSite: NODE_ENV === 'production' ? 'Strict' : 'Lax',
+      maxAge: SESSION_DURATION
+    });
+
+    console.log(`✅ User logged in: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      token: sessionToken,
+      email: normalizedEmail,
+      message: 'Login successful'
+    });
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to verify OTP. Please try again.'
+    });
   }
 });
 
 /**
- * Profile Extraction endpoint - Extract user details from uploaded document using Gemini AI
- * Purpose: Extracts profile information from uploaded documents (PDF/images) using Google Gemini AI
- * POST /api/extract-profile
- * @param {Object} req.file - Uploaded document file (via multer)
- * @returns {Object} JSON response with extracted profile data
+ * Setup QR Code - Generate TOTP secret and QR code
+ * POST /api/auth/setup-qr (requires authentication)
  */
-// POST /api/extract-profile - Extract user details from uploaded document using Gemini AI
-app.post('/api/extract-profile', upload.single('document'), async (req, res) => {
+app.post('/api/auth/setup-qr', requireAuth, async (req, res) => {
   try {
-    if (!req.file)
-      return res.status(400).json({ ok: false, message: 'No document uploaded' });
+    const { email } = req.user;
+    const user = users.get(email);
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey)
-      return res.status(500).json({ ok: false, message: 'Gemini API key not configured' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    const base64Data = req.file.buffer.toString('base64');
-    const mimeType = req.file.mimetype;
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-    const prompt = `You are a JSON extractor for a matrimonial registration form (HeavenMatch).
-Return ONLY a single valid JSON object (no surrounding text) with these exact keys (use null if not present):
-
-{
-  "firstName": "First name or null",
-  "lastName": "Last name or null",
-  "fullName": "Full name or null",
-  "dateOfBirth": "DD/MM/YYYY or null",
-  "age": "numeric age or null",
-  "gender": "Female/Male/Other or null",
-  "maritalStatus": "Single/Divorced/Widowed or null",
-  "email": "email or null",
-  "phone": "phone number or null",
-  "education": "highest qualification or null",
-  "profession": "job title or null",
-  "income": "annual income or null",
-  "location": "city, state or null",
-  "religion": "or null",
-  "community": "or null",
-  "caste": "or null",
-  "motherTongue": "or null",
-  "familyType": "Nuclear/Joint or null",
-  "noOfSiblings": "integer or null",
-  "height": "e.g. 170 cm or 5'7\" or null",
-  "weight": "e.g. 70 kg or null",
-  "hobbies": "comma separated or short sentence or null",
-  "aboutMe": "short bio or null",
-  "partnerPreferences": "short text or null"
-}`;
-
-    const requestBody = {
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64Data } },
-          ],
-        },
-      ],
-      generationConfig: { temperature: 0.0, maxOutputTokens: 2048 },
-    };
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+    // Generate TOTP secret
+    const secret = speakeasy.generateSecret({
+      name: `HeavenMatch (${email})`,
+      issuer: 'HeavenMatch'
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
-      return res
-        .status(500)
-        .json({ ok: false, message: 'AI processing failed', error: errorText });
-    }
-
-    const data = await response.json();
-    const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!generatedText)
-      return res
-        .status(500)
-        .json({ ok: false, message: 'Invalid AI response structure' });
-
-    let extracted;
-    try {
-      const cleaned = generatedText.replace(/```json\n?|\n?```/g, '').trim();
-      extracted = JSON.parse(cleaned);
-    } catch (err) {
-      console.error('JSON parse error:', err, generatedText);
-      return res
-        .status(500)
-        .json({ ok: false, message: 'Failed to parse AI JSON', raw: generatedText });
-    }
-
-    const toNullIfEmpty = (v) =>
-      !v || (typeof v === 'string' && v.trim() === '') ? null : v;
-    const parseIntSafe = (v) => {
-      const num = parseInt(String(v).match(/\d+/)?.[0] || '');
-      return isNaN(num) ? null : num;
-    };
-    const ddmmyyyyToIso = (d) => {
-      const m = d?.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-      return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
-    };
-
-    const e = extracted || {};
-    const fullName = toNullIfEmpty(e.fullName);
-    let firstName = toNullIfEmpty(e.firstName);
-    let lastName = toNullIfEmpty(e.lastName);
-    if ((!firstName || !lastName) && fullName) {
-      const parts = fullName.split(/\s+/);
-      firstName = parts[0] || null;
-      lastName = parts.slice(1).join(' ') || null;
-    }
-
-    const normalized = {
-      firstName,
-      lastName,
-      fullName: fullName || `${firstName || ''} ${lastName || ''}`.trim() || null,
-      dateOfBirth: toNullIfEmpty(e.dateOfBirth),
-      dobIso: e.dateOfBirth ? ddmmyyyyToIso(e.dateOfBirth) : null,
-      age: parseIntSafe(e.age),
-      gender: toNullIfEmpty(e.gender),
-      maritalStatus: toNullIfEmpty(e.maritalStatus),
-      email: toNullIfEmpty(e.email),
-      phone: toNullIfEmpty(e.phone),
-      education: toNullIfEmpty(e.education),
-      profession: toNullIfEmpty(e.profession),
-      income: toNullIfEmpty(e.income),
-      location: toNullIfEmpty(e.location),
-      religion: toNullIfEmpty(e.religion),
-      community: toNullIfEmpty(e.community),
-      caste: toNullIfEmpty(e.caste),
-      motherTongue: toNullIfEmpty(e.motherTongue),
-      familyType: toNullIfEmpty(e.familyType),
-      noOfSiblings: parseIntSafe(e.noOfSiblings),
-      height: toNullIfEmpty(e.height),
-      weight: toNullIfEmpty(e.weight),
-      hobbies: toNullIfEmpty(e.hobbies),
-      aboutMe: toNullIfEmpty(e.aboutMe),
-      partnerPreferences: toNullIfEmpty(e.partnerPreferences),
-    };
-
-    return res.json({
-      ok: true,
-      message: 'Profile extracted successfully',
-      raw: extracted,
-      data: normalized,
+    // Store temporary secret (not activated until verified)
+    pendingQRSetup.set(email, {
+      tempSecret: secret.base32,
+      timestamp: Date.now()
     });
-  } catch (err) {
-    console.error('extract-profile error:', err);
-    return res
-      .status(500)
-      .json({ ok: false, message: 'Server error', error: err.message });
+
+    // Generate QR code data URL
+    const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url);
+
+    res.json({
+      success: true,
+      qrCode: qrCodeDataURL,
+      secret: NODE_ENV === 'development' ? secret.base32 : undefined, // Only show in dev
+      message: 'Scan the QR code with your authenticator app'
+    });
+  } catch (error) {
+    console.error('QR setup error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to generate QR code. Please try again.'
+    });
   }
 });
 
+/**
+ * Verify QR Setup - Confirm TOTP code and activate QR authentication
+ * POST /api/auth/verify-qr-setup (requires authentication)
+ */
+app.post('/api/auth/verify-qr-setup', requireAuth, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const { email } = req.user;
 
+    if (!code || !/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'Valid 6-digit code is required' });
+    }
+
+    const pendingSetup = pendingQRSetup.get(email);
+
+    if (!pendingSetup) {
+      return res.status(400).json({
+        error: 'NO_PENDING_SETUP',
+        message: 'No pending QR setup found. Please start the setup process again.'
+      });
+    }
+
+    // Verify TOTP code
+    const verified = speakeasy.totp.verify({
+      secret: pendingSetup.tempSecret,
+      encoding: 'base32',
+      token: code,
+      window: 2 // Allow 2 time steps before/after
+    });
+
+    if (!verified) {
+      return res.status(400).json({
+        error: 'INVALID_CODE',
+        message: 'Invalid code. Please try again.'
+      });
+    }
+
+    // Activate QR authentication
+    const user = users.get(email);
+    if (user) {
+      user.secret = pendingSetup.tempSecret;
+      user.qrSetup = true;
+    }
+
+    pendingQRSetup.delete(email);
+
+    console.log(`✅ QR authentication activated for: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'QR authentication activated successfully'
+    });
+  } catch (error) {
+    console.error('QR verification error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to verify code. Please try again.'
+    });
+  }
+});
+
+/**
+ * Disable QR Authentication
+ * POST /api/auth/disable-qr (requires authentication)
+ */
+app.post('/api/auth/disable-qr', requireAuth, async (req, res) => {
+  try {
+    const { email } = req.user;
+    const user = users.get(email);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.secret = null;
+    user.qrSetup = false;
+
+    console.log(`✅ QR authentication disabled for: ${email}`);
+
+    res.json({
+      success: true,
+      message: 'QR authentication disabled successfully'
+    });
+  } catch (error) {
+    console.error('QR disable error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to disable QR authentication. Please try again.'
+    });
+  }
+});
+
+/**
+ * Login with QR Code - TOTP authentication
+ * POST /api/auth/login-qr
+ */
+app.post('/api/auth/login-qr', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required' });
+    }
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'Valid 6-digit code is required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = users.get(normalizedEmail);
+
+    if (!user || !user.qrSetup || !user.secret) {
+      return res.status(400).json({
+        error: 'QR_NOT_SETUP',
+        message: 'QR authentication is not set up for this account.'
+      });
+    }
+
+    // Verify TOTP code
+    const verified = speakeasy.totp.verify({
+      secret: user.secret,
+      encoding: 'base32',
+      token: code,
+      window: 2
+    });
+
+    if (!verified) {
+      return res.status(400).json({
+        error: 'INVALID_CODE',
+        message: 'Invalid code. Please try again.'
+      });
+    }
+
+    // Create session
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    sessionStore.set(sessionToken, {
+      email: normalizedEmail,
+      timestamp: Date.now()
+    });
+
+    // Set httpOnly cookie
+    res.cookie('hm_session', sessionToken, {
+      httpOnly: true,
+      secure: NODE_ENV === 'production',
+      sameSite: NODE_ENV === 'production' ? 'Strict' : 'Lax',
+      maxAge: SESSION_DURATION
+    });
+
+    console.log(`✅ User logged in via QR: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      token: sessionToken,
+      email: normalizedEmail,
+      message: 'Login successful'
+    });
+  } catch (error) {
+    console.error('QR login error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to log in. Please try again.'
+    });
+  }
+});
+
+/**
+ * Check Session Validity
+ * GET /api/auth/session (requires authentication)
+ */
+app.get('/api/auth/session', requireAuth, (req, res) => {
+  const { email } = req.user;
+  const user = users.get(email);
+
+  res.json({
+    authenticated: true,
+    email,
+    qrSetup: user?.qrSetup || false
+  });
+});
+
+/**
+ * Logout - Destroy session
+ * POST /api/auth/logout (requires authentication)
+ */
+app.post('/api/auth/logout', requireAuth, (req, res) => {
+  try {
+    const token = req.headers['authorization']?.replace('Bearer ', '') ||
+                  req.cookies?.hm_session;
+
+    if (token) {
+      sessionStore.delete(token);
+      res.clearCookie('hm_session');
+      console.log(`✅ User logged out: ${req.user.email}`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to log out. Please try again.'
+    });
+  }
+});
 
 app.post('/api/contact/submit', submissionLimiter, requireCsrfToken, (req, res) => {
   const { honeypot, ...payload } = req.body || {};
@@ -859,7 +1196,7 @@ const callAI = async (prompt, options = {}) => {
  * @param {string} req.body.message - The user message to analyze
  * @returns {Object} JSON response with detected intent and original message
  */
-app.post('/api/detect-intent', async (req, res) => {
+app.post('/api/detect-intent', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       maxSubmissions: 60
@@ -925,7 +1262,7 @@ Respond with ONLY the category name (one word, lowercase):`;
  * @param {Array} req.body.conversation - Array of conversation messages with sender and text
  * @returns {Object} JSON response with extracted information (name, email, phone, subject)
  */
-app.post('/api/extract-info', async (req, res) => {
+app.post('/api/extract-info', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       maxSubmissions: 60
@@ -1003,7 +1340,7 @@ JSON:`;
  * @param {string} req.body.urgency - Optional urgency level (low, medium, high)
  * @returns {Object} JSON response with recommended channel, contact info, and reasoning
  */
-app.post('/api/smart-route', async (req, res) => {
+app.post('/api/smart-route', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       maxSubmissions: 60
@@ -1117,7 +1454,7 @@ Respond with ONLY a JSON object in this exact format:
  * @param {Array} req.body.conversation - Optional conversation history for context
  * @returns {Object} JSON response with answer, source (faq/ai), and matching FAQ item if found
  */
-app.post('/api/faq-search', async (req, res) => {
+app.post('/api/faq-search', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       maxSubmissions: 60
@@ -1216,7 +1553,7 @@ Answer:`;
  * @param {string} req.body.priority - Ticket priority level (optional, auto-determined if not provided)
  * @returns {Object} JSON response with ticket ID, ticket object, and success message
  */
-app.post('/api/create-ticket', async (req, res) => {
+app.post('/api/create-ticket', requireAuth, async (req, res) => {
   try {
     const validationCheck = validateSubmission(req, req.body?.formToken);
     if (!validationCheck.valid) {
@@ -1318,7 +1655,7 @@ Consider urgency, impact, and issue type. Respond with ONLY one word: "low", "me
  * @returns {Object} JSON response with cleaned AI-generated text response
  * @throws {Error} Various error types (MODEL_LOADING, RATE_LIMIT, AUTH_ERROR, NETWORK_ERROR, etc.)
  */
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const injectionCheck = validateAllInputs(req.body);
     if (!injectionCheck.safe) {
@@ -1427,7 +1764,7 @@ IMPORTANT:
  * @param {Array} req.body.conversation - Optional conversation history for context
  * @returns {Object} JSON response with sentiment, emotion, urgency level, and tone
  */
-app.post('/api/analyze-sentiment', async (req, res) => {
+app.post('/api/analyze-sentiment', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       requireToken: false
@@ -1512,7 +1849,7 @@ JSON:`;
  * @param {string} req.body.message - The message to analyze for language detection
  * @returns {Object} JSON response with detected language name and detection success status
  */
-app.post('/api/detect-language', async (req, res) => {
+app.post('/api/detect-language', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       requireToken: false
@@ -1616,7 +1953,7 @@ Respond with ONLY the language name (e.g., "English", "Hindi", "Spanish", "Frenc
  * @param {Array} req.body.conversation - Optional conversation history for context
  * @returns {Object} JSON response with array of up to 3 quick reply suggestions
  */
-app.post('/api/quick-replies', async (req, res) => {
+app.post('/api/quick-replies', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken, {
       maxSubmissions: 60
@@ -1680,7 +2017,7 @@ JSON array:`;
  * @param {Array} req.body.conversation - Array of conversation messages
  * @returns {Object} JSON response with a 2-3 sentence summary of the conversation
  */
-app.post('/api/summarize-conversation', async (req, res) => {
+app.post('/api/summarize-conversation', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken);
     if (!validation.valid) {
@@ -1739,7 +2076,7 @@ Summary:`;
  * @param {string} req.body.intent - Detected intent category
  * @returns {Object} JSON response with escalation decision (true/false) and reason
  */
-app.post('/api/should-escalate', async (req, res) => {
+app.post('/api/should-escalate', requireAuth, async (req, res) => {
   try {
     const validation = validateSubmission(req, req.body?.formToken);
     if (!validation.valid) {
@@ -1860,46 +2197,20 @@ app.listen(PORT, () => {
   console.log(`📍 Server: http://localhost:${PORT}`);
   console.log(`🤖 AI Provider: ${AI_PROVIDER.toUpperCase()}`);
   console.log(`🧠 AI Model: ${AI_MODEL}`);
-  console.log(`🔑 AI API Key: ${AI_API_KEY ? '✅ Loaded' : '❌ Not found'}`);
-  console.log(`📧 Email Service: ${process.env.SMTP_HOST ? '✅ Configured' : '❌ Not configured'}`);
-  console.log(`📄 Document Extraction: ${process.env.GEMINI_API_KEY ? '✅ Gemini Ready' : '❌ Not configured'}`);
+  console.log(`🔑 API Key: ${AI_API_KEY ? '✅ Loaded' : '❌ Not found'}`);
   console.log(`🛡️  Security Stack:`);
   console.log(`   ├─ Helmet + CSP allowlist`);
   console.log(`   ├─ CSRF tokens & cookie binding`);
   console.log(`   ├─ Advanced bot timing + honeypot checks`);
   console.log(`   ├─ Prompt injection detection`);
-  console.log(`   ├─ Rate limiting (Express & adaptive)`);
-  console.log(`   ├─ OTP verification system`);
-  console.log(`   └─ File upload security (multer)`);
-  console.log(`📋 Available Endpoints:`);
-  console.log(`   ├─ POST /api/send-otp - Send OTP to email`);
-  console.log(`   ├─ POST /api/verify-otp - Verify OTP`);
-  console.log(`   ├─ POST /api/extract-profile - Extract profile from document`);
-  console.log(`   ├─ POST /api/chat - AI chat endpoint`);
-  console.log(`   └─ ... and more AI endpoints`);
+  console.log(`   └─ Rate limiting (Express & adaptive)`);
   console.log(`${'='.repeat(60)}\n`);
 
   if (!AI_API_KEY) {
-    console.log(`⚠️  AI Setup Instructions:`);
+    console.log(`⚠️  Setup Instructions:`);
     console.log(`   1. Obtain an API key (e.g., https://openrouter.ai/keys).`);
     console.log(`   2. Add to .env: REACT_APP_AI_API_KEY=your_key_here`);
     console.log(`   3. Restart server: npm run dev\n`);
-  }
-
-  if (!process.env.SMTP_HOST) {
-    console.log(`⚠️  Email Setup Instructions:`);
-    console.log(`   1. Configure SMTP settings in .env:`);
-    console.log(`      SMTP_HOST=your_smtp_host`);
-    console.log(`      SMTP_PORT=587`);
-    console.log(`      SMTP_USER=your_email`);
-    console.log(`      SMTP_PASS=your_password`);
-    console.log(`      FROM_EMAIL=your_from_email\n`);
-  }
-
-  if (!process.env.GEMINI_API_KEY) {
-    console.log(`⚠️  Gemini Setup Instructions:`);
-    console.log(`   1. Obtain Gemini API key from Google AI Studio`);
-    console.log(`   2. Add to .env: GEMINI_API_KEY=your_key_here\n`);
   }
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
@@ -1913,4 +2224,6 @@ app.listen(PORT, () => {
     process.exit(1);
   }
 });
+
+
 

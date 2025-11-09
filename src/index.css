@@ -25,13 +25,18 @@
 @import './styles/theme.css';
 
 :root {
-  --primary-color: #ec4899; /* pink-500 */
+  --primary-color: #D90368; /* Hot Pink/Magenta */
+  --secondary-color: #FB8B24; /* Vibrant Orange */
+  --accent-color: #820263; /* Deep Purple */
+  --dark-color: #291720; /* Dark Purple/Black */
+  --success-color: #04A777; /* Emerald Green */
   --text-light: #ffffff;
   --text-dark: #111827; /* gray-900 */
   --card-background: #ffffff;
   --background-light: #ffffff;
-  --border-color: #fbcfe8; /* pink-200 */
-  --shadow-subtle: 0 10px 25px rgba(236, 72, 153, 0.15);
+  --border-color: #FB8B24; /* Orange border */
+  --shadow-subtle: 0 10px 25px rgba(217, 3, 104, 0.15);
+  --shadow-orange: 0 10px 25px rgba(251, 139, 36, 0.15);
 }
 
 * {
@@ -90,11 +95,11 @@ body {
 .shimmer-text {
   background: linear-gradient(
     90deg,
-    #ec4899 0%,
-    #f472b6 25%,
-    #fbbf24 50%,
-    #f472b6 75%,
-    #ec4899 100%
+    #D90368 0%,
+    #FB8B24 25%,
+    #820263 50%,
+    #FB8B24 75%,
+    #D90368 100%
   );
   background-size: 2000px 100%;
   background-clip: text;
@@ -116,3 +121,4 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+

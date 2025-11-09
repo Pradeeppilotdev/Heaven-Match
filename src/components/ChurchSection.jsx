@@ -19,8 +19,8 @@ import profile15 from '../public/images/profiles/15.png';
 // --- Data for all communities ---
 const communities = {
   dharmic: {
-    name: 'Dharmic',
-    description: 'Find matches who share your Dharmic values and traditions.',
+    name: 'Hindu',
+    description: 'Find matches who share your Hindu values and traditions.',
     color: 'from-orange-950 to-gray-900',
     buttonColor: 'bg-orange-600',
     buttonHover: 'hover:bg-orange-500',
