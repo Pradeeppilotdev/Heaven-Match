@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 
 // Import your interactive demo components
-import  AIIcebreakerDemo  from './UI/AIIceBreakerDemo';
-import  DeepCompatibiltyDemo  from './UI/DeepCompatibiltyDemo';
-import  AIPersonalCoach  from './UI/AIPersonalCoach';
-import  AIVerification  from './UI/AIVerification';
+import  AIIcebreakerDemo  from './ui/AIIceBreakerDemo';
+import  DeepCompatibiltyDemo  from './ui/DeepCompatibiltyDemo';
+import  AIPersonalCoach  from './ui/AIPersonalCoach';
+import  AIVerification  from './ui/AIVerification';
 
 /**
  * A reusable, consistent card component for displaying a feature.
