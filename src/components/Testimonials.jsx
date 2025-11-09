@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Quote, Star, User, ChevronLeft, ChevronRight, RefreshCw, Loader2 } from 'lucide-react';
-import { fetchWithRetry, apiQueue, apiCache, handleAPIError } from './UI/apiUtils';
+import { fetchWithRetry, apiQueue, apiCache, handleAPIError } from './ui/apiUtils';
 
 // Simple wrapper component for consistent styling and hover effects.
 const Card = ({ children, className = '' }) => (
